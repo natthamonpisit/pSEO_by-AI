@@ -191,7 +191,27 @@ async def get_comparison(product_id: str):
         if not response.data:
             raise HTTPException(status_code=404, detail="Comparison not found")
 
-        return response.data[0]
+        comp_data = response.data[0]
+
+        # 2. Fetch Product Details (Images, etc.)
+        try:
+            p_ids = [comp_data['product_a_id'], comp_data['product_b_id']]
+            prods_res = clerk.get_db().table("products").select("id, name, image_url").in_("id", p_ids).execute()
+            
+            # Map by ID
+            prod_map = {p['id']: p for p in prods_res.data}
+            
+            # Attach to response
+            comp_data['product_a_data'] = prod_map.get(comp_data['product_a_id'], {})
+            comp_data['product_b_data'] = prod_map.get(comp_data['product_b_id'], {})
+        
+        except Exception as e:
+            sys_logger.log("WARNING", f"Failed to fetch product images: {e}")
+            # Non-critical, continue without images
+            comp_data['product_a_data'] = {}
+            comp_data['product_b_data'] = {}
+
+        return comp_data
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

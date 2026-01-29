@@ -27,6 +27,10 @@ interface ComparisonData {
     pros_cons_p1?: { pros: string[], cons: string[] };
     pros_cons_p2?: { pros: string[], cons: string[] };
 
+    // Product Details from Join
+    product_a_data?: { name?: string, image_url?: string };
+    product_b_data?: { name?: string, image_url?: string };
+
     [key: string]: any;
 }
 
@@ -68,6 +72,8 @@ export default function ComparisonPage() {
     const consB = data.cons_b ?? data.pros_cons_p2?.cons ?? [];
 
     const winnerName = data.winner_id ? (data.winner_id === data.product_a_id ? "Product A" : "Product B") : (data.winner ?? "The Winner");
+    const winnerId = data.winner_id || (data.winner === 'A' ? data.product_a_id : data.product_b_id);
+    const winnerImage = winnerId === data.product_a_id ? data.product_a_data?.image_url : data.product_b_data?.image_url;
 
     // Normalize Specs: Convert legacy Object to Array
     const specs = Array.isArray(data.spec_comparison)
@@ -126,6 +132,26 @@ export default function ComparisonPage() {
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
                         {data.title}
                     </h1>
+
+                    {/* VS Images */}
+                    <div className="flex items-center justify-center gap-8 my-8">
+                        <div className="w-32 h-32 md:w-48 md:h-48 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-center">
+                            {data.product_a_data?.image_url ? (
+                                <img src={data.product_a_data.image_url} alt="Product A" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                                <span className="text-4xl font-bold text-slate-200">A</span>
+                            )}
+                        </div>
+                        <div className="text-2xl font-black text-slate-300 italic">VS</div>
+                        <div className="w-32 h-32 md:w-48 md:h-48 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-center">
+                            {data.product_b_data?.image_url ? (
+                                <img src={data.product_b_data.image_url} alt="Product B" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                                <span className="text-4xl font-bold text-slate-200">B</span>
+                            )}
+                        </div>
+                    </div>
+
                     <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
                         {data.intro}
                     </p>
@@ -134,14 +160,21 @@ export default function ComparisonPage() {
                 {/* Winner Card */}
                 <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-8 text-white shadow-xl mb-12 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-                    <div className="relative z-10 text-center">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 uppercase tracking-wider backdrop-blur-sm">
-                            <Award size={14} /> The Verdict
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                        {winnerImage && (
+                            <div className="w-40 h-40 bg-white rounded-xl p-2 shadow-lg shrink-0 rotate-3">
+                                <img src={winnerImage} alt="Winner" className="w-full h-full object-contain rounded-lg" />
+                            </div>
+                        )}
+                        <div className="text-center md:text-left flex-1">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 uppercase tracking-wider backdrop-blur-sm">
+                                <Award size={14} /> The Verdict
+                            </div>
+                            <h2 className="text-3xl font-bold mb-4">Winner: {winnerName}</h2>
+                            <p className="text-indigo-100 leading-relaxed">
+                                {data.verdict}
+                            </p>
                         </div>
-                        <h2 className="text-3xl font-bold mb-4">Winner: {winnerName}</h2>
-                        <p className="text-indigo-100 leading-relaxed max-w-2xl mx-auto">
-                            {data.verdict}
-                        </p>
                     </div>
                 </div>
 
