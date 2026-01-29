@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Check, Award, BarChart3, Star, Clock } from 'lucide-react';
 import { API_URL } from '../config';
+import SEO from '../components/SEO';
 
 interface ComparisonData {
     title: string;
@@ -13,6 +14,7 @@ interface ComparisonData {
     pros_cons_p1: { pros: string[], cons: string[] };
     pros_cons_p2: { pros: string[], cons: string[] };
     spec_comparison: Record<string, { p1: any, p2: any, winner: string }>;
+    product_a_name?: string; // We might need to fetch this or infer from title if not in DB schema yet
 }
 
 export default function ComparisonPage() {
@@ -27,15 +29,7 @@ export default function ComparisonPage() {
                 const res = await fetch(`${API_URL}/api/comparisons/${id}`);
                 if (!res.ok) throw new Error('Comparison not found');
                 const json = await res.json();
-
-                // Parse strings back to JSON if they are stored as strings in DB
-                // Supabase sometimes returns JSONB as object automatically, but let's be safe
-                const parsedData = {
-                    ...json,
-                    // Ensure deep objects are parsed if they come as strings (unlikely with Supabase-py but good safety)
-                };
-
-                setData(parsedData);
+                setData(json);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -49,8 +43,34 @@ export default function ComparisonPage() {
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
     if (!data) return null;
 
+    // --- SEO & Schema Generation ---
+    const winnerScore = data.score_p1 > data.score_p2 ? data.score_p1 : data.score_p2;
+    // Basic Product Schema for the "Main Entity" (The Comparison or the Winner)
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": data.title,
+        "description": data.intro,
+        "review": {
+            "@type": "Review",
+            "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": String(winnerScore),
+                "bestRating": "100"
+            },
+            "author": { "@type": "Organization", "name": "CompareX AI" },
+            "reviewBody": data.verdict
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20">
+            <SEO
+                title={data.title}
+                description={data.intro.slice(0, 160) + '...'}
+                schema={jsonLd}
+            />
+
             {/* Header / Nav */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -108,7 +128,7 @@ export default function ComparisonPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {Object.entries(data.spec_comparison).map(([feature, detail]: [string, any]) => (
+                                {data.spec_comparison && Object.entries(data.spec_comparison).map(([feature, detail]: [string, any]) => (
                                     <tr key={feature} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-700">{feature}</td>
                                         <td className="px-6 py-4 text-slate-600">{detail.p1}</td>
@@ -137,7 +157,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p1.pros.map((item, i) => (
+                                    {data.pros_cons_p1?.pros?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
                                         </li>
@@ -147,7 +167,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p1.cons.map((item, i) => (
+                                    {data.pros_cons_p1?.cons?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
                                         </li>
@@ -167,7 +187,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p2.pros.map((item, i) => (
+                                    {data.pros_cons_p2?.pros?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
                                         </li>
@@ -177,7 +197,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p2.cons.map((item, i) => (
+                                    {data.pros_cons_p2?.cons?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
                                         </li>
