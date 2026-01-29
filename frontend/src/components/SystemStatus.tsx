@@ -29,7 +29,7 @@ export default function SystemStatus() {
     const triggerJob = async (job: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/system/trigger/${job}`, { method: 'POST' });
+            const res = await fetch(`${API_URL}/api/system/trigger/${job}`);
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({ detail: res.statusText }));
                 throw new Error(errData.detail || `HTTP ${res.status}`);

@@ -109,7 +109,7 @@ from .scheduler import run_hunter_job, run_processing_loop
 def get_logs():
     return sys_logger.get_logs()
 
-@app.post("/api/system/trigger/{job_name}")
+@app.get("/api/system/trigger/{job_name}")
 async def trigger_job(job_name: str):
     sys_logger.log("INFO", f"👆 Manual Trigger: {job_name}")
     try:
