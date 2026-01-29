@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Search, ArrowUpRight } from 'lucide-react';
+import { API_URL } from '../config';
 
 interface TrendItem {
     id: string;
@@ -18,7 +19,7 @@ export default function TrendMonitor() {
         setLoading(true);
         try {
             // In dev mode, using proxy or full URL
-            const res = await fetch(`http://127.0.0.1:8000/api/hunter/trends?category=${category}`);
+            const res = await fetch(`${API_URL}/api/hunter/trends?category=${category}`);
             const data = await res.json();
             setTrends(data);
         } catch (err) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Package, MoreHorizontal, CheckCircle, AlertCircle } from 'lucide-react';
+import { API_URL } from '../config';
 
 interface Product {
     id: string;
@@ -16,7 +17,7 @@ export default function ProductManager() {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/products');
+            const res = await fetch(`${API_URL}/api/products`);
             const data = await res.json();
             setProducts(data);
         } catch (err) {
