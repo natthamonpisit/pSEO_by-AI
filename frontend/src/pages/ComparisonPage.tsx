@@ -31,6 +31,12 @@ interface ComparisonData {
     product_a_data?: { name?: string, image_url?: string };
     product_b_data?: { name?: string, image_url?: string };
 
+    // Summaries
+    summary_a?: string;
+    summary_b?: string;
+    summaryA?: string; // fallback
+    summaryB?: string; // fallback
+
     [key: string]: any;
 }
 

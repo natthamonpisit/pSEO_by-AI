@@ -13,6 +13,8 @@ class ComparisonResult(BaseModel):
     language: str
     title: str
     intro: str
+    summaryA: str
+    summaryB: str
     winnerId: str
     verdict: str
     scoreA: float
@@ -38,11 +40,12 @@ async def generate_comparison(p1: Dict[str, Any], p2: Dict[str, Any], focus_fiel
     Instructions:
     - Compare line-by-line using focus fields: {', '.join(focus_fields)}
     - Prioritize PRICE-TO-PERFORMANCE.
-    - Output STRICT JSON with these keys: title, intro, winnerId, verdict, scoreA, scoreB, prosA, consA, prosB, consB, specComparison (list of dicts with keys: field, valueA, valueB, winner (A or B or Tie)), faqs.
+    - Output STRICT JSON with these keys: title, intro, summaryA, summaryB, winnerId, verdict, scoreA, scoreB, prosA, consA, prosB, consB, specComparison (list of dicts with keys: field, valueA, valueB, winner (A or B or Tie)), faqs.
     - KEEP KEYS IN ENGLISH. VALUES IN {language}.
 
     Specific Content Guidance:
     - [Intro]: Generate a 2-3 sentence "Hook" that explains why people compare these two products. Mention their key target audience or main difference immediately to grab attention. Make it feel like a human expert starting a conversation. Do not just list specs here.
+    - [SummaryA & SummaryB]: Generate a detailed 2-paragraph summary for EACH product explaining its key positioning, target audience, and standout features. This helps the reader get to know the contenders before the fight.
     """
     
     try:
