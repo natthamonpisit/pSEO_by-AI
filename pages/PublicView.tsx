@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { Product, ComparisonResult } from '../types';
-import { Trophy, Check, X, Star, ExternalLink, ArrowRight, Info, Search, HelpCircle, Code } from 'lucide-react';
+import { Trophy, Check, X, Star, ExternalLink, ArrowRight, Info, Search, HelpCircle, Code, Share2, ImageIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
 const PublicView: React.FC = () => {
@@ -180,34 +180,56 @@ const PublicView: React.FC = () => {
             </div>
         )}
 
-        {/* 👀 Google Search Preview */}
-        <div className="bg-slate-50 border-b border-slate-200 p-6">
-           <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center">
-             <Search size={14} className="mr-1" /> Google Search Preview
+        {/* 🖼️ UNIQUE IMAGE STRATEGY: Dynamic Social Card */}
+        <div className="bg-slate-100 border-b border-slate-200 p-6">
+           <div className="flex justify-between items-center mb-3">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                <ImageIcon size={14} className="mr-1" /> 
+                Unique Image Generator (The Anti-Spam Strategy)
+              </div>
+              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200 font-bold">
+                 Google Safe ✅
+              </span>
            </div>
-           <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 max-w-2xl">
-              <div className="flex items-center space-x-2 mb-1">
-                 <div className="w-6 h-6 rounded-full bg-slate-200"></div>
-                 <div className="text-xs text-slate-700">CompareX.io › compare › {selectedComparison.id}</div>
-              </div>
-              <div className="text-xl text-blue-800 hover:underline cursor-pointer mb-1 truncate">
-                {selectedComparison.title}
-              </div>
-              <div className="text-sm text-slate-600 line-clamp-2">
-                {new Date(selectedComparison.generatedAt).toLocaleDateString()} — {selectedComparison.intro}
-              </div>
-              {/* Rich Snippet Simulation */}
-              <div className="flex items-center space-x-1 mt-1">
-                 <div className="flex text-yellow-500">
-                    <Star size={10} fill="currentColor" />
-                    <Star size={10} fill="currentColor" />
-                    <Star size={10} fill="currentColor" />
-                    <Star size={10} fill="currentColor" />
-                    <Star size={10} fill="currentColor" />
-                 </div>
-                 <span className="text-[10px] text-slate-500">Rating: 9/10 • Review by AI Curator</span>
-              </div>
+           
+           {/* This is the card we would generate as a .png using 'vercel/og' or 'sharp' */}
+           <div className="relative w-full max-w-2xl mx-auto aspect-video bg-gradient-to-br from-slate-900 to-blue-900 rounded-xl overflow-hidden shadow-2xl flex items-center justify-center p-8 border-4 border-slate-800">
+               {/* Background Pattern */}
+               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+               
+               <div className="relative z-10 flex items-center justify-between w-full">
+                  {/* Product A */}
+                  <div className="flex flex-col items-center w-1/3">
+                     <div className="w-32 h-32 bg-white rounded-full p-4 flex items-center justify-center shadow-lg mb-4">
+                        <img src={productA.imageUrl} className="max-w-full max-h-full object-contain" />
+                     </div>
+                     <h3 className="text-white font-bold text-lg text-center leading-tight">{productA.name}</h3>
+                     <span className="mt-2 bg-blue-500 text-white text-xs px-2 py-1 rounded font-bold">{selectedComparison.scoreA}/10</span>
+                  </div>
+
+                  {/* VS Badge */}
+                  <div className="flex flex-col items-center justify-center w-1/3">
+                     <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 italic drop-shadow-lg">
+                        VS
+                     </div>
+                     <div className="mt-2 text-slate-400 text-xs font-mono uppercase tracking-widest text-center">
+                        CompareX Analysis
+                     </div>
+                  </div>
+
+                  {/* Product B */}
+                  <div className="flex flex-col items-center w-1/3">
+                     <div className="w-32 h-32 bg-white rounded-full p-4 flex items-center justify-center shadow-lg mb-4">
+                        <img src={productB.imageUrl} className="max-w-full max-h-full object-contain" />
+                     </div>
+                     <h3 className="text-white font-bold text-lg text-center leading-tight">{productB.name}</h3>
+                     <span className="mt-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">{selectedComparison.scoreB}/10</span>
+                  </div>
+               </div>
            </div>
+           <p className="text-center text-xs text-slate-500 mt-2">
+             *In Production: This layout is converted into a physical PNG file (og-image.png) for every page.
+           </p>
         </div>
 
         {/* SEO Header */}
