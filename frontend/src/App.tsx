@@ -66,9 +66,13 @@ function App() {
                         </div>
                     )}
 
-                    {activeTab !== 'dashboard' && (
+                    {activeTab === 'products' && <ProductManager />}
+
+                    {activeTab === 'trends' && <TrendMonitor />}
+
+                    {activeTab === 'settings' && (
                         <div className="flex items-center justify-center h-full text-slate-400">
-                            Feature coming soon...
+                            Settings coming soon...
                         </div>
                     )}
                 </div>
@@ -82,8 +86,8 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
         >
             {icon}
