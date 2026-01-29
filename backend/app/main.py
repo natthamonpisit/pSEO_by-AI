@@ -11,10 +11,18 @@ load_dotenv()
 
 app = FastAPI(title="CompareX Brain API")
 
-# Allow Frontend access (Vercel)
+# Allow Frontend access (Vercel + Local Dev)
+import os
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    FRONTEND_URL,  # Production Vercel URL from env
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # TODO: Restrict to Vercel domain in generic prod
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -97,10 +105,12 @@ async def get_comparison(product_id: str):
             .select("*")\
             .eq("product_a_id", product_id)\
             .execute()
-        
+
         if not response.data:
             raise HTTPException(status_code=404, detail="Comparison not found")
-            
+
+        return response.data[0]
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

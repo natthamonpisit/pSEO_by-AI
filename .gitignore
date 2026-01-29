@@ -9,3 +9,7 @@ __pycache__/
 .env
 venv/
 .venv/
+
+# Test scripts
+add_test_products.py
+cleanup_trends.py

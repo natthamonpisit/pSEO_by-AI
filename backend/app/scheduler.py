@@ -52,7 +52,7 @@ async def run_processing_loop():
                 p1_id = existing_a[0]['id']
                 if existing_a[0].get('has_content', False):
                      sys_logger.log("WARNING", f"[Scheduler] Skipping {product_a.name} (Content already exists)")
-                     db.table("trends").update({"status": "DUPLICATE"}).eq("id", trend['id']).execute()
+                     db.table("trends").update({"status": "IGNORED"}).eq("id", trend['id']).execute()
                      continue
             else:
                 # Save Product A

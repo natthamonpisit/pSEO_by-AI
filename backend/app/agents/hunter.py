@@ -144,8 +144,8 @@ async def get_daily_trends(category: str) -> List[TrendItem]:
                      "status": "NEW",
                      "found_at": datetime.datetime.now().isoformat()
                  }).execute()
-             except Exception:
-                 pass
+             except Exception as e:
+                 print(f"⚠️ Failed to save trend '{trend_obj.productName}': {e}")
 
         return results
 
