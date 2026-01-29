@@ -8,13 +8,15 @@ interface ComparisonData {
     title: string;
     intro: string;
     verdict: string;
-    score_p1: number;
-    score_p2: number;
-    winner: string;
-    pros_cons_p1: { pros: string[], cons: string[] };
-    pros_cons_p2: { pros: string[], cons: string[] };
-    spec_comparison: Record<string, { p1: any, p2: any, winner: string }>;
-    product_a_name?: string; // We might need to fetch this or infer from title if not in DB schema yet
+    score_a: number;
+    score_b: number;
+    winner_id: string | null;
+    pros_a: string[];
+    cons_a: string[];
+    pros_b: string[];
+    cons_b: string[];
+    spec_comparison: Array<{ field: string, valueA: string, valueB: string, winner: string }>;
+    faqs: Array<{ question: string, answer: string }>;
 }
 
 export default function ComparisonPage() {
@@ -44,7 +46,7 @@ export default function ComparisonPage() {
     if (!data) return null;
 
     // --- SEO & Schema Generation ---
-    const winnerScore = data.score_p1 > data.score_p2 ? data.score_p1 : data.score_p2;
+    const winnerScore = data.score_a > data.score_b ? data.score_a : data.score_b;
     // Basic Product Schema for the "Main Entity" (The Comparison or the Winner)
     const jsonLd = {
         "@context": "https://schema.org",
@@ -61,6 +63,14 @@ export default function ComparisonPage() {
             "author": { "@type": "Organization", "name": "CompareX AI" },
             "reviewBody": data.verdict
         }
+    };
+
+    // Helper for check marks in specs
+    const isWinner = (val: string, winner: string) => {
+        if (!winner) return false;
+        // Simple logic: if winner is "A" and val is valueA (implied by column)
+        // But here we rely on the row's 'winner' field: "A", "B", or "Tie"
+        return false;
     };
 
     return (
@@ -104,7 +114,11 @@ export default function ComparisonPage() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 uppercase tracking-wider backdrop-blur-sm">
                             <Award size={14} /> The Verdict
                         </div>
-                        <h2 className="text-3xl font-bold mb-4">Winner: {data.winner}</h2>
+                        {/* Note: We don't have explicit winner NAME in top-level data, only winner_id. 
+                            Ideally we'd fetch product names or store them. For now, infer from context or leave generic?
+                            Actually, title usually says "A vs B", so we can guess. 
+                            Let's just show the verdict text which usually names the winner. */}
+                        <h2 className="text-3xl font-bold mb-4">Winner Revealed</h2>
                         <p className="text-indigo-100 leading-relaxed max-w-2xl mx-auto">
                             {data.verdict}
                         </p>
@@ -128,14 +142,20 @@ export default function ComparisonPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {data.spec_comparison && Object.entries(data.spec_comparison).map(([feature, detail]: [string, any]) => (
-                                    <tr key={feature} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-slate-700">{feature}</td>
-                                        <td className="px-6 py-4 text-slate-600">{detail.p1}</td>
-                                        <td className="px-6 py-4 text-slate-600">{detail.p2}</td>
+                                {data.spec_comparison && data.spec_comparison.map((item, i) => (
+                                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-700">{item.field}</td>
+                                        <td className="px-6 py-4 text-slate-600">{item.valueA}</td>
+                                        <td className="px-6 py-4 text-slate-600">{item.valueB}</td>
                                         <td className="px-6 py-4 text-right">
+                                            {/* Show check if winner matches. 
+                                                The backend prompt now asks for "A" or "B" or "Tie". 
+                                                We display the text, and maybe an icon if it's clear. 
+                                            */}
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700">
-                                                <Check size={12} /> {detail.winner}
+                                                {item.winner === 'A' && <Check size={12} />}
+                                                {item.winner === 'B' && <Check size={12} />}
+                                                {item.winner}
                                             </span>
                                         </td>
                                     </tr>
@@ -157,7 +177,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p1?.pros?.map((item, i) => (
+                                    {data.pros_a?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
                                         </li>
@@ -167,7 +187,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p1?.cons?.map((item, i) => (
+                                    {data.cons_a?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
                                         </li>
@@ -187,7 +207,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p2?.pros?.map((item, i) => (
+                                    {data.pros_b?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
                                         </li>
@@ -197,7 +217,7 @@ export default function ComparisonPage() {
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
                                 <ul className="space-y-2">
-                                    {data.pros_cons_p2?.cons?.map((item, i) => (
+                                    {data.cons_b?.map((item, i) => (
                                         <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
                                             <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
                                         </li>

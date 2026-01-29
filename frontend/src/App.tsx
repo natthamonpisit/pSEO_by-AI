@@ -94,14 +94,17 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
     );
 }
 
+import LandingPage from './pages/LandingPage';
+
 function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/admin" element={<AdminLayout />} />
                 <Route path="/compare/:id" element={<ComparisonPage />} />
-                {/* Default redirect to Admin for now */}
-                <Route path="*" element={<Navigate to="/admin" replace />} />
+                {/* Redirect unknown routes to home */}
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     );

@@ -166,6 +166,19 @@ async def compare_products(req: CompareRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/comparisons")
+async def list_comparisons(limit: int = 10):
+    try:
+        response = clerk.get_db().table("comparisons")\
+            .select("*")\
+            .order("created_at", desc=True)\
+            .limit(limit)\
+            .execute()
+        return response.data
+    except Exception as e:
+        sys_logger.log("ERROR", f"Failed to list comparisons: {e}")
+        return []
+
 @app.get("/api/comparisons/{product_id}")
 async def get_comparison(product_id: str):
     try:

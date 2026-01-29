@@ -38,7 +38,7 @@ async def generate_comparison(p1: Dict[str, Any], p2: Dict[str, Any], focus_fiel
     Instructions:
     - Compare line-by-line using focus fields: {', '.join(focus_fields)}
     - Prioritize PRICE-TO-PERFORMANCE.
-    - Output STRICT JSON with these keys: title, intro, winnerId, verdict, scoreA, scoreB, prosA, consA, prosB, consB, specComparison (list of dicts with field, valueA, valueB), faqs.
+    - Output STRICT JSON with these keys: title, intro, winnerId, verdict, scoreA, scoreB, prosA, consA, prosB, consB, specComparison (list of dicts with keys: field, valueA, valueB, winner (A or B or Tie)), faqs.
     - KEEP KEYS IN ENGLISH. VALUES IN {language}.
     """
     
