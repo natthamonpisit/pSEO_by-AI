@@ -76,7 +76,7 @@ export default function SystemStatus() {
                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                             <div>
                                 <h4 className="font-medium text-slate-700">Processing Loop</h4>
-                                <p className="text-xs text-slate-500">Specs -> Match -> Generate -> Save</p>
+                                <p className="text-xs text-slate-500">Specs → Match → Generate → Save</p>
                             </div>
                             <button
                                 onClick={() => triggerJob('loop')}
@@ -129,9 +129,9 @@ export default function SystemStatus() {
                         <div key={i} className="flex gap-3">
                             <span className="text-slate-500 shrink-0">{log.timestamp.split('T')[1].split('.')[0]}</span>
                             <span className={`shrink-0 font-bold ${log.level === 'ERROR' ? 'text-red-400' :
-                                    log.level === 'WARNING' ? 'text-amber-400' :
-                                        log.level === 'SUCCESS' ? 'text-emerald-400' :
-                                            'text-blue-400'
+                                log.level === 'WARNING' ? 'text-amber-400' :
+                                    log.level === 'SUCCESS' ? 'text-emerald-400' :
+                                        'text-blue-400'
                                 }`}>
                                 [{log.level}]
                             </span>
