@@ -16,21 +16,29 @@ export default function SystemStatus() {
     const fetchLogs = async () => {
         try {
             const res = await fetch(`${API_URL}/api/system/logs`);
+            if (!res.ok) throw new Error(`Backend Error: ${res.status}`);
             const data = await res.json();
-            setLogs(data);
+            if (Array.isArray(data)) {
+                setLogs(data);
+            }
         } catch (err) {
-            console.error(err);
+            console.error("Fetch Logs Failed:", err);
         }
     };
 
     const triggerJob = async (job: string) => {
         setLoading(true);
         try {
-            await fetch(`${API_URL}/api/system/trigger/${job}`, { method: 'POST' });
+            const res = await fetch(`${API_URL}/api/system/trigger/${job}`, { method: 'POST' });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({ detail: res.statusText }));
+                throw new Error(errData.detail || `HTTP ${res.status}`);
+            }
             // Fetch logs immediately to show the "Triggered" message
             setTimeout(fetchLogs, 500);
+            alert(`✅ Triggered ${job} successfully!`);
         } catch (err) {
-            alert('Trigger Failed');
+            alert(`❌ Trigger Failed: ${err}`);
         } finally {
             setLoading(false);
         }
