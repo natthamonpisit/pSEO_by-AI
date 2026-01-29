@@ -1,3 +1,4 @@
+
 // ---------------------------------------------------------------------------
 // J's Note: Core Data Structure
 // ห้ามเปลี่ยน Structure นี้โดยพละการ เพราะจะกระทบทั้ง AI Generator และ Frontend Display
@@ -104,4 +105,15 @@ export interface TrendItem {
   suggestedSpecs?: Record<string, string>;
   suggestedPrice?: number;
   status: 'NEW' | 'ENRICHING' | 'READY_TO_ADD' | 'ADDED';
+}
+
+// 👁️ OBSERVABILITY: System Logs
+// เพื่อให้เราติดตามการทำงานของ AI ได้ตามหลัก Good Software Design
+export interface SystemLog {
+  id: string;
+  timestamp: string;
+  level: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS';
+  agent: 'HUNTER' | 'CLERK' | 'ANALYST' | 'EDITOR' | 'SYSTEM';
+  message: string;
+  details?: string;
 }

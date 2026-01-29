@@ -1,96 +1,175 @@
-import { Product, ComparisonResult, CategoryDefinition, DEFAULT_CATEGORIES } from '../types';
+
+import { Product, ComparisonResult, CategoryDefinition, DEFAULT_CATEGORIES, SystemLog } from '../types';
 import { MOCK_PRODUCTS } from '../constants';
 
 // ---------------------------------------------------------------------------
-// [J's Architecture Note]
-// ไฟล์นี้คือ "สะพาน" เชื่อมต่อกับ Database
-//
-// 📌 SUPABASE ROLE:
-// ใน Production เราจะเปลี่ยนโค้ดทั้งหมดในไฟล์นี้ให้ใช้ 'supabase-js' client
-// แทนการใช้ localStorage
+// [J's Architecture Refactor - Clean Architecture]
+// 
+// เราเปลี่ยนจาก Direct LocalStorage Access มาใช้ "Repository Pattern"
+// เพื่อให้ Business Logic ไม่ยึดติดกับ Infrastructure (LocalStorage)
+// วันหน้าถ้าจะเปลี่ยนไปใช้ Supabase ก็แค่สร้าง Class ใหม่มาเสียบแทน (Liskov Substitution Principle)
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY_PRODUCTS = 'pseo_products';
-const STORAGE_KEY_COMPARISONS = 'pseo_comparisons';
-const STORAGE_KEY_CATEGORIES = 'pseo_categories';
-
-/**
- * 🛠️ Helper: Get default comparison fields based on category name.
- * Used when the AI hasn't generated a template yet or as a fallback.
- * 
- * @param category - The name of the category (e.g., "Smartphone")
- * @returns Array of spec keys (e.g., ["Camera", "Battery"])
- */
-const GET_DEFAULT_SPECS = (category: string): string[] => {
-  const map: Record<string, string[]> = {
-    'Smartphone': ['Display', 'Processor', 'Camera', 'Battery', 'Charging'],
-    'Laptop': ['CPU', 'GPU', 'RAM', 'Storage', 'Display', 'Weight'],
-    'Headphones': ['Sound Quality', 'Noise Cancellation', 'Battery Life', 'Comfort', 'Connectivity'],
-    'Camera': ['Sensor Size', 'Resolution', 'Video Capabilities', 'Autofocus', 'ISO Range'],
-    'Smartwatch': ['Battery Life', 'Health Sensors', 'Display', 'Water Resistance', 'Compatibility']
-  };
-  return map[category] || ['Price', 'Features', 'Build Quality', 'Performance']; // Fallback
+const STORAGE_KEYS = {
+  PRODUCTS: 'pseo_products',
+  COMPARISONS: 'pseo_comparisons',
+  CATEGORIES: 'pseo_categories',
+  LOGS: 'pseo_system_logs'
 };
 
-/**
- * 🛠️ Helper: Initialize local storage with Seed Data.
- * Ensures the app has dummy data to show on the first load.
- */
-const initData = () => {
-  if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(MOCK_PRODUCTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEY_COMPARISONS)) {
-    localStorage.setItem(STORAGE_KEY_COMPARISONS, JSON.stringify([]));
-  }
+// 1. Define the Contract (Interface) - นี่คือ "Port" ใน Hexagonal Architecture
+interface IDataRepository {
+  // Categories
+  getCategories(): CategoryDefinition[];
+  saveCategory(category: CategoryDefinition): void;
+  deleteCategory(id: string): void;
+
+  // Products
+  getProducts(): Product[];
+  getProductById(id: string): Product | undefined;
+  saveProduct(product: Product): void;
+
+  // Comparisons
+  getComparisons(): ComparisonResult[];
+  saveComparison(comparison: ComparisonResult): void;
   
-  // Initialize Categories from Default List if empty
-  if (!localStorage.getItem(STORAGE_KEY_CATEGORIES)) {
-    const initialCategories: CategoryDefinition[] = DEFAULT_CATEGORIES.map(name => ({
-      id: name.toLowerCase().replace(/\s+/g, '-'),
-      name: name,
-      slug: name.toLowerCase().replace(/\s+/g, '-'),
-      comparisonFields: GET_DEFAULT_SPECS(name),
-      contentTone: 'Professional'
-    }));
-    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(initialCategories));
-  }
-};
+  // Observability
+  log(level: SystemLog['level'], agent: SystemLog['agent'], message: string, details?: string): void;
+  getLogs(): SystemLog[];
+}
 
-initData();
+// 2. The Implementation (Adapter) - อันนี้คือ "Adapter" สำหรับ LocalStorage
+class LocalStorageRepository implements IDataRepository {
+  
+  constructor() {
+    this.initSeedData();
+  }
+
+  private initSeedData() {
+    if (typeof window === 'undefined') return;
+
+    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(MOCK_PRODUCTS));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.COMPARISONS)) {
+      localStorage.setItem(STORAGE_KEYS.COMPARISONS, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
+      const initialCategories: CategoryDefinition[] = DEFAULT_CATEGORIES.map(name => ({
+        id: name.toLowerCase().replace(/\s+/g, '-'),
+        name: name,
+        slug: name.toLowerCase().replace(/\s+/g, '-'),
+        comparisonFields: this.getDefaultSpecs(name),
+        contentTone: 'Professional'
+      }));
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(initialCategories));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.LOGS)) {
+        localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify([]));
+    }
+  }
+
+  private getDefaultSpecs(category: string): string[] {
+    const map: Record<string, string[]> = {
+        'Smartphone': ['Display', 'Processor', 'Camera', 'Battery', 'Charging'],
+        'Laptop': ['CPU', 'GPU', 'RAM', 'Storage', 'Display', 'Weight'],
+        'Headphones': ['Sound Quality', 'Noise Cancellation', 'Battery Life', 'Comfort', 'Connectivity'],
+        'Camera': ['Sensor Size', 'Resolution', 'Video Capabilities', 'Autofocus', 'ISO Range'],
+        'Smartwatch': ['Battery Life', 'Health Sensors', 'Display', 'Water Resistance', 'Compatibility']
+      };
+    return map[category] || ['Price', 'Features', 'Build Quality', 'Performance'];
+  }
+
+  // --- Implementation Methods ---
+
+  getCategories(): CategoryDefinition[] {
+    const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    return data ? JSON.parse(data) : [];
+  }
+
+  saveCategory(category: CategoryDefinition): void {
+    const categories = this.getCategories();
+    // Update if exists, else push
+    const index = categories.findIndex(c => c.id === category.id);
+    if (index >= 0) categories[index] = category;
+    else categories.push(category);
+    
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  }
+
+  deleteCategory(id: string): void {
+    const categories = this.getCategories();
+    const filtered = categories.filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+  }
+
+  getProducts(): Product[] {
+    const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  getProductById(id: string): Product | undefined {
+    return this.getProducts().find(p => p.id === id);
+  }
+
+  saveProduct(product: Product): void {
+    const products = this.getProducts();
+    const index = products.findIndex(p => p.id === product.id);
+    if (index >= 0) products[index] = product;
+    else products.push(product);
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+  }
+
+  getComparisons(): ComparisonResult[] {
+    const data = localStorage.getItem(STORAGE_KEYS.COMPARISONS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  saveComparison(comparison: ComparisonResult): void {
+    const comparisons = this.getComparisons();
+    // Prevent duplicates logic
+    const filtered = comparisons.filter(c => 
+      !((c.productAId === comparison.productAId && c.productBId === comparison.productBId) ||
+        (c.productAId === comparison.productBId && c.productBId === comparison.productAId))
+    );
+    filtered.push(comparison);
+    localStorage.setItem(STORAGE_KEYS.COMPARISONS, JSON.stringify(filtered));
+  }
+
+  log(level: SystemLog['level'], agent: SystemLog['agent'], message: string, details?: string): void {
+    const logs = this.getLogs();
+    const newLog: SystemLog = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        level,
+        agent,
+        message,
+        details
+    };
+    // Keep only last 100 logs to prevent LocalStorage bloat (Scalability concern)
+    const updatedLogs = [newLog, ...logs].slice(0, 100);
+    localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(updatedLogs));
+  }
+
+  getLogs(): SystemLog[] {
+    const data = localStorage.getItem(STORAGE_KEYS.LOGS);
+    return data ? JSON.parse(data) : [];
+  }
+}
+
+// 3. The Service Layer (Facade)
+// ตัว App จะเรียกใช้ object นี้ โดยไม่สนว่าไส้ในเป็น LocalStorageRepository
+const repository = new LocalStorageRepository();
 
 export const dataService = {
-  // --- CATEGORIES (Dynamic Architecture) ---
+  // Pass-through methods
+  getCategories: () => repository.getCategories(),
+  getCategoryByName: (name: string) => repository.getCategories().find(c => c.name === name),
   
-  /**
-   * 📖 Read: Get all active categories.
-   */
-  getCategories: (): CategoryDefinition[] => {
-    const data = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-    return data ? JSON.parse(data) : [];
-  },
-
-  /**
-   * 🔍 Search: Find a category definition by its name.
-   */
-  getCategoryByName: (name: string): CategoryDefinition | undefined => {
-    const categories = dataService.getCategories();
-    return categories.find(c => c.name === name);
-  },
-
-  /**
-   * ✍️ Write: Create a new category with specific AI rules (fields & tone).
-   * Prevents duplicates based on slug.
-   * 
-   * @param name - Category Name
-   * @param customFields - (Optional) List of specs AI should focus on
-   * @param tone - (Optional) The writing style for this category
-   */
   addCategory: (name: string, customFields?: string[], tone?: string) => {
-    const categories = dataService.getCategories();
     const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
-    
-    if (categories.some(c => c.slug === slug)) return; // Prevent duplicates
+    const categories = repository.getCategories();
+    if (categories.some(c => c.slug === slug)) return; 
 
     const newCat: CategoryDefinition = {
       id: slug,
@@ -98,106 +177,51 @@ export const dataService = {
       slug: slug,
       description: `All about ${name}`,
       comparisonFields: customFields || ['Price', 'Features', 'Performance', 'Value'],
-      contentTone: tone || 'Professional' // Save AI Tone
+      contentTone: tone || 'Professional'
     };
-    
-    categories.push(newCat);
-    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
+    repository.saveCategory(newCat);
+    repository.log('INFO', 'SYSTEM', `Category created: ${name}`);
   },
 
-  /**
-   * 🗑️ Delete: Remove a category by ID.
-   */
   deleteCategory: (id: string) => {
-    const categories = dataService.getCategories();
-    const filtered = categories.filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(filtered));
+    repository.deleteCategory(id);
+    repository.log('WARNING', 'SYSTEM', `Category deleted: ${id}`);
   },
 
-  // --- PRODUCTS ---
-
-  /**
-   * 📖 Read: Get all products.
-   */
-  getProducts: (): Product[] => {
-    const data = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  /**
-   * 🔍 Search: Find a product by ID.
-   */
-  getProductById: (id: string): Product | undefined => {
-    const products = dataService.getProducts();
-    return products.find(p => p.id === id);
-  },
-
-  /**
-   * ✍️ Write: Save or Update a product.
-   * If ID exists, update; otherwise, insert new.
-   */
+  getProducts: () => repository.getProducts(),
+  getProductById: (id: string) => repository.getProductById(id),
   saveProduct: (product: Product) => {
-    const products = dataService.getProducts();
-    const index = products.findIndex(p => p.id === product.id);
-    if (index >= 0) {
-      products[index] = product;
-    } else {
-      products.push(product);
-    }
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+      repository.saveProduct(product);
+      repository.log('SUCCESS', 'SYSTEM', `Product saved: ${product.name}`);
   },
 
-  // --- COMPARISONS ---
-
-  /**
-   * 📖 Read: Get all generated comparison pages.
-   */
-  getComparisons: (): ComparisonResult[] => {
-    const data = localStorage.getItem(STORAGE_KEY_COMPARISONS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  /**
-   * 🔍 Search: Find an existing comparison between two products.
-   * Checks both directions (A vs B and B vs A).
-   */
-  getComparisonBySlug: (idA: string, idB: string): ComparisonResult | undefined => {
-    const comparisons = dataService.getComparisons();
+  getComparisons: () => repository.getComparisons(),
+  getComparisonBySlug: (idA: string, idB: string) => {
+    const comparisons = repository.getComparisons();
     return comparisons.find(c => 
       (c.productAId === idA && c.productBId === idB) || 
       (c.productAId === idB && c.productBId === idA)
     );
   },
-
-  /**
-   * ✍️ Write: Save a generated comparison to the database.
-   * Overwrites if a comparison between these two IDs already exists.
-   */
   saveComparison: (comparison: ComparisonResult) => {
-    const comparisons = dataService.getComparisons();
-    const filtered = comparisons.filter(c => 
-      !((c.productAId === comparison.productAId && c.productBId === comparison.productBId) ||
-        (c.productAId === comparison.productBId && c.productBId === comparison.productAId))
-    );
-    filtered.push(comparison);
-    localStorage.setItem(STORAGE_KEY_COMPARISONS, JSON.stringify(filtered));
+      repository.saveComparison(comparison);
+      repository.log('SUCCESS', 'ANALYST', `Comparison generated: ${comparison.title}`);
   },
 
-  /**
-   * 📊 Analytics: Calculate total possible pages (N * (N-1) / 2)
-   * Groups calculation by Category to be accurate.
-   */
   getPotentialCombinationsCount: (): number => {
-    // Logic: Calculate pairings PER category to be more accurate
-    const products = dataService.getProducts();
-    const categories = dataService.getCategories();
+    const products = repository.getProducts();
+    const categories = repository.getCategories();
     let totalPairs = 0;
-
     categories.forEach(cat => {
       const pInCat = products.filter(p => p.category === cat.name).length;
       totalPairs += (pInCat * (pInCat - 1)) / 2;
     });
-
     return totalPairs;
-  }
+  },
+
+  // Observability
+  log: (level: SystemLog['level'], agent: SystemLog['agent'], message: string, details?: string) => {
+      repository.log(level, agent, message, details);
+  },
+  getLogs: () => repository.getLogs()
 };
