@@ -9,6 +9,7 @@ interface Product {
     category_slug: string;
     created_at: string;
     price: number;
+    has_content: boolean;
 }
 
 export default function ProductManager() {
@@ -39,7 +40,9 @@ export default function ProductManager() {
                     <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                         📦 Product Manager
                     </h2>
-                    <p className="text-xs text-slate-500">Verified Database ({products.length} items)</p>
+                    <p className="text-xs text-slate-500">
+                        {products.filter(p => p.has_content).length} Published / {products.length} Total
+                    </p>
                 </div>
             </div>
 
@@ -49,6 +52,7 @@ export default function ProductManager() {
                         <tr className="text-xs text-slate-500 border-b border-slate-100">
                             <th className="py-2 font-medium">Product Name</th>
                             <th className="py-2 font-medium">Category</th>
+                            <th className="py-2 font-medium">Status</th>
                             <th className="py-2 font-medium">Date Added</th>
                             <th className="py-2 font-medium text-right">Action</th>
                         </tr>
@@ -62,8 +66,15 @@ export default function ProductManager() {
                         {products.map((product) => (
                             <tr key={product.id} className="border-b border-slate-50 hover:bg-slate-50 group">
                                 <td className="py-3 pr-2">
-                                    <div className="font-medium text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                        {product.name}
+                                    <div className="flex items-center gap-2">
+                                        <div className="font-medium text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                            {product.name}
+                                        </div>
+                                        {product.has_content && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+                                                ✓ Live
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="text-[10px] text-slate-400">ID: {product.id.slice(0, 8)}...</div>
                                 </td>
@@ -72,16 +83,35 @@ export default function ProductManager() {
                                         {product.category_slug}
                                     </span>
                                 </td>
+                                <td className="py-3 px-2">
+                                    {product.has_content ? (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <CheckCircle size={12} />
+                                            Published
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                            <AlertCircle size={12} />
+                                            Pending
+                                        </span>
+                                    )}
+                                </td>
                                 <td className="py-3 px-2 text-slate-500 text-xs">
                                     {new Date(product.created_at).toLocaleDateString()}
                                 </td>
                                 <td className="py-3 pl-2 text-right">
-                                    <Link
-                                        to={`/compare/${product.id}`}
-                                        className="text-indigo-600 hover:text-indigo-800 text-xs font-medium px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                                    >
-                                        Details
-                                    </Link>
+                                    {product.has_content ? (
+                                        <Link
+                                            to={`/compare/${product.id}`}
+                                            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium px-3 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                                        >
+                                            View Page
+                                        </Link>
+                                    ) : (
+                                        <span className="text-slate-400 text-xs px-3 py-1">
+                                            Processing...
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
