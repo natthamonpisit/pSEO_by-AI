@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { LayoutDashboard, Package, TrendingUp, Settings, Bell, Search, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Package, TrendingUp, Settings, Bell, Search } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import TrendMonitor from './components/TrendMonitor';
 import ProductManager from './components/ProductManager';
+import ComparisonPage from './pages/ComparisonPage';
 
-function App() {
+function AdminLayout() {
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState('dashboard');
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-800 font-sans">
-
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
                 <div className="p-6">
@@ -46,7 +48,6 @@ function App() {
                     <div className="flex items-center gap-4 text-slate-400">
                         <button className="hover:text-slate-600 transition-colors"><Search size={20} /></button>
                         <button className="hover:text-slate-600 transition-colors"><Bell size={20} /></button>
-                        <button className="hover:text-slate-600 transition-colors"><HelpCircle size={20} /></button>
                     </div>
                 </header>
 
@@ -71,7 +72,7 @@ function App() {
                     {activeTab === 'trends' && <TrendMonitor />}
 
                     {activeTab === 'settings' && (
-                        <div className="flex items-center justify-center h-full text-slate-400">
+                        <div className="text-center text-slate-400 mt-20">
                             Settings coming soon...
                         </div>
                     )}
@@ -86,13 +87,26 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
         >
             {icon}
             {label}
         </button>
+    );
+}
+
+function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/admin" element={<AdminLayout />} />
+                <Route path="/compare/:id" element={<ComparisonPage />} />
+                {/* Default redirect to Admin for now */}
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

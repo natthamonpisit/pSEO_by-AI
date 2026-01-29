@@ -85,3 +85,19 @@ async def compare_products(req: CompareRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/comparisons/{product_id}")
+async def get_comparison(product_id: str):
+    try:
+        # 1. Check if comparison exists for this product
+        response = clerk.get_db().table("comparisons")\
+            .select("*")\
+            .eq("product_a_id", product_id)\
+            .execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Comparison not found")
+            
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
