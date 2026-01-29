@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+import time
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
@@ -30,6 +31,27 @@ app.add_middleware(
 
 from .logger import sys_logger
 
+# Logging Middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+
+    # Process request
+    response = await call_next(request)
+
+    # Calculate duration
+    duration = time.time() - start_time
+
+    # Log request
+    log_message = f"{request.method} {request.url.path} - {response.status_code} ({duration:.3f}s)"
+
+    if response.status_code >= 400:
+        sys_logger.log("WARNING", log_message)
+    elif duration > 5.0:  # Slow request
+        sys_logger.log("WARNING", f"Slow request: {log_message}")
+
+    return response
+
 @app.on_event("startup")
 def startup_event():
     sys_logger.log("INFO", "🚀 System Started")
@@ -38,6 +60,25 @@ def startup_event():
 @app.get("/")
 def read_root():
     return {"status": "online", "service": "CompareX Brain"}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring and load balancers"""
+    import time
+    try:
+        # Test database connection
+        clerk.get_db().table("categories").select("count", count="exact").limit(1).execute()
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+
+    return {
+        "status": "ok",
+        "timestamp": time.time(),
+        "service": "CompareX Brain API",
+        "database": db_status,
+        "version": "1.0.0"
+    }
 
 # --- HUNTER ---
 @app.get("/api/hunter/trends")
@@ -55,8 +96,36 @@ class EnrichRequest(BaseModel):
     required_fields: List[str] = []
     language: str = "TH"
 
+    class Config:
+        str_min_length = 1
+        str_max_length = 500
+
+from pydantic import field_validator
+
+class EnrichRequestValidated(BaseModel):
+    product_name: str
+    category: str
+    required_fields: List[str] = []
+    language: str = "TH"
+
+    @field_validator('product_name')
+    @classmethod
+    def validate_product_name(cls, v):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Product name cannot be empty')
+        if len(v) > 200:
+            raise ValueError('Product name too long (max 200 characters)')
+        return v.strip()
+
+    @field_validator('category')
+    @classmethod
+    def validate_category(cls, v):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Category cannot be empty')
+        return v.strip()
+
 @app.post("/api/clerk/enrich")
-async def enrich_product(req: EnrichRequest):
+async def enrich_product(req: EnrichRequestValidated):
     return await clerk.enrich_product_specs(
         req.product_name, req.category, req.required_fields, req.language
     )
