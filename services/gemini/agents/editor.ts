@@ -41,6 +41,17 @@ export const generateComparisonContent = async (
             winner: { type: Type.STRING }
           }
         }
+      },
+      faqs: {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                question: { type: Type.STRING, description: "A common user question (e.g., Which camera is better?)" },
+                answer: { type: Type.STRING, description: "A direct, concise answer (max 2 sentences)." }
+            }
+        },
+        description: "3-4 Frequently Asked Questions for Voice Search Optimization."
       }
     }
   };
@@ -55,7 +66,7 @@ export const generateComparisonContent = async (
     : `Language: ENGLISH. Use Global/US Standard English. Use "USD" or "$" for currency context.`;
 
   const prompt = `
-    Role: You are a Trusted Tech Curator (Sophisticated, Insightful, Grounded).
+    Role: You are a Trusted Tech Curator and SEO Specialist.
     Task: Compare ${p1.name} vs ${p2.name}.
     ${languageInstruction}
 
@@ -81,6 +92,10 @@ export const generateComparisonContent = async (
          - Act as a consultant, not a salesperson.
          - Guide the user: "If you prioritize X, choose A. But for pure value, B is the smart choice."
          - Make it feel like a wise recommendation from a friend who knows tech.
+         
+       - **FAQ Section (SEO Goldmine)**:
+         - Generate 3-4 questions that users ask on Google (e.g., "Is A worth the upgrade from B?", "Does A have better battery life?").
+         - Provide answers that are *direct* and *definitive*. AI Search engines love direct answers.
 
     Constraint: Return STRICT JSON.
   `;
@@ -107,7 +122,8 @@ export const generateComparisonContent = async (
       productBId: p2.id,
       generatedAt: new Date().toISOString(),
       language: language,
-      ...json
+      ...json,
+      faqs: json.faqs || []
     };
 
   } catch (error) {
@@ -128,7 +144,8 @@ export const generateComparisonContent = async (
       consA: [],
       prosB: [],
       consB: [],
-      specComparison: []
+      specComparison: [],
+      faqs: []
     };
   }
 };

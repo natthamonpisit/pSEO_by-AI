@@ -41,7 +41,8 @@ const initData = () => {
       id: name.toLowerCase().replace(/\s+/g, '-'),
       name: name,
       slug: name.toLowerCase().replace(/\s+/g, '-'),
-      comparisonFields: GET_DEFAULT_SPECS(name)
+      comparisonFields: GET_DEFAULT_SPECS(name),
+      contentTone: 'Professional'
     }));
     localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(initialCategories));
   }
@@ -61,7 +62,8 @@ export const dataService = {
     return categories.find(c => c.name === name);
   },
 
-  addCategory: (name: string, customFields?: string[]) => {
+  // ✨ UPDATED: Full Schema Support
+  addCategory: (name: string, customFields?: string[], tone?: string) => {
     const categories = dataService.getCategories();
     const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
     
@@ -72,7 +74,8 @@ export const dataService = {
       name: name.trim(),
       slug: slug,
       description: `All about ${name}`,
-      comparisonFields: customFields || ['Price', 'Features', 'Performance', 'Value'] // Default for new dynamic cats
+      comparisonFields: customFields || ['Price', 'Features', 'Performance', 'Value'],
+      contentTone: tone || 'Professional' // Save AI Tone
     };
     
     categories.push(newCat);

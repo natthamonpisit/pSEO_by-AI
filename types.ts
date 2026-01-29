@@ -72,6 +72,9 @@ export interface ComparisonResult {
   consA: string[];
   prosB: string[];
   consB: string[];
+  
+  // 🤖 NEW: SEO & AI Optimization
+  faqs: { question: string; answer: string }[]; // For Voice Search & Featured Snippets
 }
 
 export enum ComparisonStatus {

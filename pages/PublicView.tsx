@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { Product, ComparisonResult } from '../types';
-import { Trophy, Check, X, Star, ExternalLink, ArrowRight } from 'lucide-react';
+import { Trophy, Check, X, Star, ExternalLink, ArrowRight, Info, Search, HelpCircle, Code } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
 const PublicView: React.FC = () => {
@@ -10,6 +10,7 @@ const PublicView: React.FC = () => {
   const [selectedComparison, setSelectedComparison] = useState<ComparisonResult | null>(null);
   const [productA, setProductA] = useState<Product | null>(null);
   const [productB, setProductB] = useState<Product | null>(null);
+  const [showSourceCode, setShowSourceCode] = useState(false); // For learning purpose
 
   useEffect(() => {
     const all = dataService.getComparisons();
@@ -23,6 +24,72 @@ const PublicView: React.FC = () => {
     setSelectedComparison(comp);
     setProductA(dataService.getProductById(comp.productAId) || null);
     setProductB(dataService.getProductById(comp.productBId) || null);
+    setShowSourceCode(false);
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    if (currency === 'THB' || currency === '฿') return `฿${amount.toLocaleString()}`;
+    return `$${amount.toLocaleString()}`;
+  };
+
+  // 🤖 GEO SECRET: JSON-LD Generator
+  // This function creates the "Machine Language" for Google/AI to read.
+  const generateStructuredData = () => {
+    if (!selectedComparison || !productA || !productB) return '';
+
+    // Schema.org Product
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": selectedComparison.title,
+      "description": selectedComparison.intro,
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "9",
+          "bestRating": "10"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "CompareX AI"
+        }
+      },
+      "mainEntity": [
+        {
+           "@type": "Product",
+           "name": productA.name,
+           "image": productA.imageUrl,
+           "offers": {
+              "@type": "Offer",
+              "price": productA.price,
+              "priceCurrency": productA.currency
+           }
+        },
+        {
+           "@type": "Product",
+           "name": productB.name,
+           "image": productB.imageUrl,
+           "offers": {
+              "@type": "Offer",
+              "price": productB.price,
+              "priceCurrency": productB.currency
+           }
+        }
+      ],
+      "mainEntityOfPage": {
+        "@type": "FAQPage",
+        "mainEntity": (selectedComparison.faqs || []).map(faq => ({
+           "@type": "Question",
+           "name": faq.question,
+           "acceptedAnswer": {
+             "@type": "Answer",
+             "text": faq.answer
+           }
+        }))
+      }
+    };
+    return JSON.stringify(schema, null, 2);
   };
 
   if (comparisons.length === 0) {
@@ -47,40 +114,99 @@ const PublicView: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-100px)]">
       {/* Top Bar: Page Selector (Simulating Google Search Results Click) */}
-      <div className="bg-white border-b border-slate-200 p-4 mb-6 flex items-center space-x-4 flex-shrink-0 overflow-x-auto whitespace-nowrap">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Simulate Page View:</span>
-        {comparisons.map(c => (
-           <button 
-             key={c.id}
-             onClick={() => loadComparison(c)}
-             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-               selectedComparison.id === c.id 
-               ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
-               : 'bg-white text-slate-600 border-slate-300 hover:border-slate-500'
-             }`}
-           >
-             {c.id}
-           </button>
-        ))}
+      <div className="bg-white border-b border-slate-200 p-4 mb-6 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center space-x-4 overflow-x-auto whitespace-nowrap">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Simulate Page View:</span>
+            {comparisons.map(c => (
+            <button 
+                key={c.id}
+                onClick={() => loadComparison(c)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center space-x-2 ${
+                selectedComparison.id === c.id 
+                ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                : 'bg-white text-slate-600 border-slate-300 hover:border-slate-500'
+                }`}
+            >
+                {c.language === 'TH' ? <span>🇹🇭</span> : <span>🌍</span>}
+                <span>{c.id}</span>
+            </button>
+            ))}
+        </div>
+        <button 
+            onClick={() => setShowSourceCode(!showSourceCode)}
+            className={`flex items-center text-xs font-bold px-3 py-1.5 rounded border ${showSourceCode ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-slate-500 hover:bg-slate-50 border-slate-200'}`}
+        >
+            <Code size={14} className="mr-2" />
+            {showSourceCode ? 'Hide Source' : 'View SEO Code'}
+        </button>
       </div>
 
-      {/* Actual SEO Page Template */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl max-w-5xl mx-auto w-full relative">
         
-        {/* SEO Header: Apple Style */}
-        <div className="bg-black text-white p-12 md:p-20 text-center relative overflow-hidden">
-          {/* Subtle glow effect */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-3xl bg-blue-900/20 blur-[100px] rounded-full pointer-events-none"></div>
+        {/* 💻 TECH TIP: Source Code Viewer Overlay */}
+        {showSourceCode && (
+            <div className="absolute inset-0 z-50 bg-slate-900/95 p-8 text-green-400 font-mono text-xs overflow-auto">
+               <h3 className="text-white font-bold text-lg mb-4 flex items-center">
+                  <Code className="mr-2" /> How AI/Google sees this page (JSON-LD)
+               </h3>
+               <p className="text-slate-400 mb-4">
+                  This "Structured Data" tells robots exactly what products are being compared, their prices, and the FAQs. 
+                  This is how you get Rich Snippets and AI Answers.
+               </p>
+               <pre className="bg-black p-4 rounded-xl border border-slate-700 whitespace-pre-wrap">
+                  {`<script type="application/ld+json">`}
+                  {generateStructuredData()}
+                  {`</script>`}
+               </pre>
+               <button 
+                 onClick={() => setShowSourceCode(false)}
+                 className="absolute top-4 right-4 text-white hover:text-red-400"
+               >
+                 <X size={24} />
+               </button>
+            </div>
+        )}
 
+        {/* 👀 Google Search Preview */}
+        <div className="bg-slate-50 border-b border-slate-200 p-6">
+           <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+             <Search size={14} className="mr-1" /> Google Search Preview
+           </div>
+           <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 max-w-2xl">
+              <div className="flex items-center space-x-2 mb-1">
+                 <div className="w-6 h-6 rounded-full bg-slate-200"></div>
+                 <div className="text-xs text-slate-700">CompareX.io › compare › {selectedComparison.id}</div>
+              </div>
+              <div className="text-xl text-blue-800 hover:underline cursor-pointer mb-1 truncate">
+                {selectedComparison.title}
+              </div>
+              <div className="text-sm text-slate-600 line-clamp-2">
+                {new Date(selectedComparison.generatedAt).toLocaleDateString()} — {selectedComparison.intro}
+              </div>
+              {/* Rich Snippet Simulation */}
+              <div className="flex items-center space-x-1 mt-1">
+                 <div className="flex text-yellow-500">
+                    <Star size={10} fill="currentColor" />
+                    <Star size={10} fill="currentColor" />
+                    <Star size={10} fill="currentColor" />
+                    <Star size={10} fill="currentColor" />
+                    <Star size={10} fill="currentColor" />
+                 </div>
+                 <span className="text-[10px] text-slate-500">Rating: 9/10 • Review by AI Curator</span>
+              </div>
+           </div>
+        </div>
+
+        {/* SEO Header */}
+        <div className="bg-black text-white p-12 md:p-20 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-3xl bg-blue-900/20 blur-[100px] rounded-full pointer-events-none"></div>
           <div className="relative z-10">
             <div className="inline-flex items-center space-x-2 bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-8 text-slate-300 border border-white/10">
                <span>CompareX Analysis</span>
             </div>
-            
             <h1 className="text-4xl md:text-7xl font-bold mb-8 leading-tight tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
               {selectedComparison.title}
             </h1>
-            
             <p className="text-slate-300 max-w-3xl mx-auto text-xl md:text-3xl leading-snug font-light tracking-tight">
               "{selectedComparison.intro}"
             </p>
@@ -102,7 +228,10 @@ const PublicView: React.FC = () => {
                   <img src={productA.imageUrl} className="max-h-full object-contain mix-blend-multiply transform group-hover:scale-110 transition-transform duration-500" alt={productA.name} />
                </div>
                <h3 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">{productA.name}</h3>
-               <div className="text-2xl font-medium text-slate-500 mb-8">${productA.price}</div>
+               {/* 💰 Currency Logic */}
+               <div className="text-2xl font-medium text-slate-500 mb-8">
+                 {formatCurrency(productA.price, selectedComparison.language === 'TH' ? 'THB' : productA.currency)}
+               </div>
                
                <div className="w-full space-y-4 mb-8 text-left bg-slate-50 p-6 rounded-2xl">
                  {selectedComparison.prosA.slice(0, 3).map((pro, i) => (
@@ -114,8 +243,8 @@ const PublicView: React.FC = () => {
                </div>
 
                <a href={productA.affiliateLink} target="_blank" rel="noopener noreferrer" className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center shadow-lg hover:shadow-blue-200">
-                 Buy Now
-                 <ArrowRight size={20} className="ml-2" />
+                 Check Price
+                 <ExternalLink size={18} className="ml-2" />
                </a>
              </div>
 
@@ -130,7 +259,10 @@ const PublicView: React.FC = () => {
                  <img src={productB.imageUrl} className="max-h-full object-contain mix-blend-multiply transform group-hover:scale-110 transition-transform duration-500" alt={productB.name} />
                </div>
                <h3 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">{productB.name}</h3>
-               <div className="text-2xl font-medium text-slate-500 mb-8">${productB.price}</div>
+               {/* 💰 Currency Logic */}
+               <div className="text-2xl font-medium text-slate-500 mb-8">
+                  {formatCurrency(productB.price, selectedComparison.language === 'TH' ? 'THB' : productB.currency)}
+               </div>
                
                <div className="w-full space-y-4 mb-8 text-left bg-slate-50 p-6 rounded-2xl">
                  {selectedComparison.prosB.slice(0, 3).map((pro, i) => (
@@ -142,8 +274,8 @@ const PublicView: React.FC = () => {
                </div>
 
                <a href={productB.affiliateLink} target="_blank" rel="noopener noreferrer" className="mt-auto w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center shadow-lg hover:shadow-slate-300">
-                 Buy Now
-                 <ArrowRight size={20} className="ml-2" />
+                 Check Price
+                 <ExternalLink size={18} className="ml-2" />
                </a>
              </div>
           </div>
@@ -217,6 +349,36 @@ const PublicView: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+          
+          {/* 🗣️ NEW: FAQ Section for Voice Search / AI Optimization */}
+          {selectedComparison.faqs && selectedComparison.faqs.length > 0 && (
+            <div className="mt-16">
+                <h3 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight flex items-center">
+                    <HelpCircle className="mr-3 text-purple-600" />
+                    Frequently Asked Questions
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {selectedComparison.faqs.map((faq, idx) => (
+                        <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-all">
+                            <h4 className="font-bold text-slate-800 mb-2">{faq.question}</h4>
+                            <p className="text-slate-600 text-sm leading-relaxed">{faq.answer}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+          )}
+
+          {/* ⚖️ Affiliate Disclaimer Footer (Compliance) */}
+          <div className="border-t border-slate-200 pt-8 mt-12 text-center text-xs text-slate-400">
+             <div className="flex items-center justify-center space-x-2 mb-2">
+                <Info size={14} />
+                <span className="font-bold uppercase tracking-wider">Transparency Note</span>
+             </div>
+             <p className="max-w-2xl mx-auto">
+                CompareX participates in affiliate programs (including Skimlinks and Amazon Associates). 
+                We may earn a commission when you click on links to purchase products. This does not affect our editorial independence.
+             </p>
           </div>
 
         </div>

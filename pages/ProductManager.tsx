@@ -33,34 +33,16 @@ const ProductManager: React.FC = () => {
     if (newCategoryName.trim()) {
       setIsGeneratingSpecs(true);
       
-      // 🧠 AI MAGIC: Auto-Architect
       try {
+        // 🧠 AI MAGIC: Auto-Architect
         const { fields, tone } = await generateSpecTemplate(newCategoryName);
         
-        // Save to DB via Service
-        // Note: We need to update dataService.addCategory to accept tone (implicitly handled by TS if we update the service, 
-        // but for now we'll manually patch the object since addCategory might not expect it in this mock implementation)
-        
-        // In a real app, update dataService.ts signature. For now, we reuse the existing method and rely on it storing the object.
-        const categories = dataService.getCategories();
-        const slug = newCategoryName.trim().toLowerCase().replace(/\s+/g, '-');
-        
-        if (!categories.some(c => c.slug === slug)) {
-             const newCat: CategoryDefinition = {
-              id: slug,
-              name: newCategoryName.trim(),
-              slug: slug,
-              description: `All about ${newCategoryName}`,
-              comparisonFields: fields,
-              contentTone: tone // Save the AI suggested tone
-            };
-            categories.push(newCat);
-            localStorage.setItem('pseo_categories', JSON.stringify(categories)); // Direct save for prototype fix
-        }
+        // ✨ CLEAN CODE: Use Service
+        dataService.addCategory(newCategoryName, fields, tone);
         
       } catch (error) {
         console.error("Failed to generate specs, using defaults", error);
-        dataService.addCategory(newCategoryName); 
+        dataService.addCategory(newCategoryName); // Fallback
       }
       
       setIsGeneratingSpecs(false);
