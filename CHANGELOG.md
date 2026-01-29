@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 *   Fixed `default export` error in `ProductManager.tsx` caused by file corruption.
 *   Fixed dependency conflict by downgrading React to v18 (required by `react-helmet-async`).
 *   Fixed "Logs not showing" issue in Admin Dashboard by implementing cache-busting for log fetching default.
+*   **Infrastructure:** Migrated System Logs from in-memory (unreliable in serverless) to Supabase (`system_logs` table) for permanent persistence.
 
 ---
 
