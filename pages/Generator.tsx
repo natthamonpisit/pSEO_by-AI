@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { generateComparisonContent, discoverCompetitors, getDailyTrends, enrichProductSpecs } from '../services/geminiService';
 import { Product, GenerationTask, ComparisonStatus, TrendItem, CategoryDefinition } from '../types';
-import { Play, CheckCircle, Clock, AlertTriangle, Loader2, Search, BrainCircuit, PenTool, Save, PlusCircle, Sparkles, TrendingUp, Radar, Rocket, Zap, Database, Terminal, FileText, UserCheck } from 'lucide-react';
+import { Play, CheckCircle, Clock, AlertTriangle, Loader2, Search, BrainCircuit, PenTool, Save, PlusCircle, Sparkles, TrendingUp, Radar, Rocket, Zap, Database, Terminal, FileText, UserCheck, Globe } from 'lucide-react';
 
 const Generator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'factory' | 'research' | 'autopilot'>('factory');
@@ -12,6 +12,7 @@ const Generator: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [agentStep, setAgentStep] = useState<0 | 1 | 2 | 3>(0); 
+  const [targetLanguage, setTargetLanguage] = useState<'TH' | 'EN'>('TH'); // 👈 NEW: UI State
   
   // --- Research State ---
   const [researchQuery, setResearchQuery] = useState('');
@@ -54,7 +55,8 @@ const Generator: React.FC = () => {
           newTasks.push({
             productA: p1,
             productB: p2,
-            status: ComparisonStatus.PENDING
+            status: ComparisonStatus.PENDING,
+            targetLanguage: 'TH' // Default
           });
         }
       }
@@ -76,6 +78,7 @@ const Generator: React.FC = () => {
       
       const updatedTasks = [...tasks];
       updatedTasks[realIndex].status = ComparisonStatus.GENERATING;
+      updatedTasks[realIndex].targetLanguage = targetLanguage; // Assign selected language
       setTasks([...updatedTasks]);
 
       // --- Visualize Agents Working ---
@@ -86,14 +89,19 @@ const Generator: React.FC = () => {
       setAgentStep(3);
       
       try {
-        // ✨ DYNAMIC SPEC INJECTION:
-        // Find the category definition to get its unique comparison fields (e.g. Drone -> Flight Time)
-        // Also inject the TONE
+        // ✨ DYNAMIC SPEC INJECTION & MULTI-LANGUAGE
         const categoryDef = dataService.getCategoryByName(task.productA.category);
         const focusFields = categoryDef?.comparisonFields || [];
         const tone = categoryDef?.contentTone || "Professional";
 
-        const result = await generateComparisonContent(task.productA, task.productB, focusFields, tone);
+        const result = await generateComparisonContent(
+            task.productA, 
+            task.productB, 
+            focusFields, 
+            tone,
+            targetLanguage // Pass selected language
+        );
+        
         dataService.saveComparison(result);
         updatedTasks[realIndex].status = ComparisonStatus.COMPLETED;
         setTasks([...updatedTasks]);
@@ -153,7 +161,13 @@ const Generator: React.FC = () => {
 
     // 3. Call Agent 2 (The Clerk)
     try {
-      const enrichedData = await enrichProductSpecs(trend.productName, trend.category, targetSpecs);
+      // 🟢 PASS LANGUAGE CONTEXT: If we are in Global Mode, get Global Links
+      const enrichedData = await enrichProductSpecs(
+        trend.productName, 
+        trend.category, 
+        targetSpecs,
+        targetLanguage // 👈 Use the state from the Factory tab
+      );
       
       // 4. Create full Product object
       const newProduct: Product = {
@@ -242,21 +256,52 @@ const Generator: React.FC = () => {
         // --- FACTORY UI (Production Line) ---
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
           <div className="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-             <div className="p-4 bg-slate-50 border-b border-slate-200 font-semibold text-slate-700 flex justify-between items-center">
-                <span>Job Queue ({tasks.length})</span>
-                <button 
-                  onClick={runBatch}
-                  disabled={isProcessing || tasks.filter(t => t.status === ComparisonStatus.PENDING).length === 0}
-                  className={`text-xs px-3 py-1.5 rounded-full font-bold flex items-center ${
-                     isProcessing 
-                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                     : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {isProcessing ? <Loader2 size={12} className="animate-spin mr-1" /> : <Play size={12} className="mr-1" />}
-                  START
-                </button>
+             
+             {/* Queue Control Header */}
+             <div className="p-4 bg-slate-50 border-b border-slate-200 font-semibold text-slate-700 flex flex-col space-y-3">
+                <div className="flex justify-between items-center">
+                    <span>Job Queue ({tasks.length})</span>
+                    <button 
+                      onClick={runBatch}
+                      disabled={isProcessing || tasks.filter(t => t.status === ComparisonStatus.PENDING).length === 0}
+                      className={`text-xs px-3 py-1.5 rounded-full font-bold flex items-center transition-colors ${
+                        isProcessing 
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {isProcessing ? <Loader2 size={12} className="animate-spin mr-1" /> : <Play size={12} className="mr-1" />}
+                      START
+                    </button>
+                </div>
+                
+                {/* Language Selector */}
+                <div className="flex items-center space-x-2 bg-white p-2 rounded-lg border border-slate-200">
+                   <Globe size={16} className="text-slate-400" />
+                   <span className="text-xs font-bold text-slate-500 uppercase">Target Market:</span>
+                   <div className="flex space-x-1">
+                      <button 
+                        onClick={() => setTargetLanguage('TH')}
+                        disabled={isProcessing}
+                        className={`px-3 py-1 text-xs rounded font-bold transition-colors ${
+                           targetLanguage === 'TH' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'text-slate-500 hover:bg-slate-100'
+                        }`}
+                      >
+                        🇹🇭 TH (Local)
+                      </button>
+                      <button 
+                        onClick={() => setTargetLanguage('EN')}
+                        disabled={isProcessing}
+                        className={`px-3 py-1 text-xs rounded font-bold transition-colors ${
+                           targetLanguage === 'EN' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'text-slate-500 hover:bg-slate-100'
+                        }`}
+                      >
+                        🌍 Global (EN)
+                      </button>
+                   </div>
+                </div>
              </div>
+
              <div className="flex-1 overflow-y-auto p-2 space-y-2">
                {tasks.length === 0 && (
                  <div className="text-center p-6 text-slate-400">
@@ -293,10 +338,16 @@ const Generator: React.FC = () => {
               <div className="relative z-10">
                 <h3 className="text-slate-400 text-xs uppercase tracking-wider font-bold mb-1">Current Job</h3>
                 {currentTaskIndex !== null ? (
-                   <div className="text-2xl font-bold flex items-center space-x-3">
-                      <span>{tasks[currentTaskIndex].productA.name}</span>
-                      <span className="text-slate-500 text-base">VS</span>
-                      <span>{tasks[currentTaskIndex].productB.name}</span>
+                   <div>
+                       <div className="text-2xl font-bold flex items-center space-x-3 mb-2">
+                          <span>{tasks[currentTaskIndex].productA.name}</span>
+                          <span className="text-slate-500 text-base">VS</span>
+                          <span>{tasks[currentTaskIndex].productB.name}</span>
+                       </div>
+                       <div className="inline-flex items-center px-2 py-1 rounded bg-indigo-500/20 border border-indigo-500/30 text-xs font-bold text-indigo-300">
+                          <Globe size={12} className="mr-1" />
+                          Generating in: {targetLanguage === 'TH' ? 'Thai Language' : 'English (Global)'}
+                       </div>
                    </div>
                 ) : (
                   <div className="text-2xl font-bold text-slate-500">Waiting to start...</div>
@@ -309,7 +360,7 @@ const Generator: React.FC = () => {
                {/* Note: In Factory Mode, we assume Agent 1 has already done the job. Start from Agent 2. */}
                <AgentCard step={1} activeStep={agentStep} icon={Database} title="Agent 2: The Clerk" desc="Preparing specs from Database" color="blue" />
                <AgentCard step={2} activeStep={agentStep} icon={BrainCircuit} title="Agent 3: The Analyst" desc="Comparing features & Scoring" color="purple" />
-               <AgentCard step={3} activeStep={agentStep} icon={PenTool} title="Agent 4: The Editor" desc="Drafting Final SEO Content" color="pink" />
+               <AgentCard step={3} activeStep={agentStep} icon={PenTool} title="Agent 4: The Editor" desc={`Drafting Final SEO Content (${targetLanguage})`} color="pink" />
             </div>
           </div>
         </div>

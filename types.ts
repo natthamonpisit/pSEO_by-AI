@@ -50,6 +50,7 @@ export interface ComparisonResult {
   productAId: string;
   productBId: string;
   generatedAt: string; // ISO Date
+  language: 'TH' | 'EN'; // 👈 NEW: Support Multi-language
   
   // AI Generated Content
   title: string;
@@ -84,6 +85,7 @@ export interface GenerationTask {
   productA: Product;
   productB: Product;
   status: ComparisonStatus;
+  targetLanguage: 'TH' | 'EN'; // 👈 NEW: Task-specific language
 }
 
 // 🦅 Agent -1: The Hunter Data Structure

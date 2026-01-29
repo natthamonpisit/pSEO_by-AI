@@ -55,7 +55,8 @@ const callPythonScraperWorker = async (productName: string): Promise<Partial<Pro
   
   if (isTechProduct) {
     console.log("✅ [PYTHON WORKER] Scraped data successfully!");
-    const affLink = await generateAffiliateLink(productName);
+    // Default to TH behavior for simulation unless context provided
+    const affLink = await generateAffiliateLink(productName, 'TH');
     return {
       name: productName,
       price: 0, 
@@ -77,11 +78,23 @@ const callPythonScraperWorker = async (productName: string): Promise<Partial<Pro
 };
 
 // Main Enrichment Logic
-export const enrichProductSpecs = async (productName: string, category: string, requiredFields: string[]): Promise<Partial<Product>> => {
+export const enrichProductSpecs = async (
+  productName: string, 
+  category: string, 
+  requiredFields: string[],
+  targetLanguage: 'TH' | 'EN' = 'TH' // 👈 NEW Parameter
+): Promise<Partial<Product>> => {
+  
   // 1. First Line of Defense: Python Scraper
   try {
     const scrapedData = await callPythonScraperWorker(productName);
-    if (scrapedData) return { ...scrapedData, category };
+    // If scraper worked, we might need to update link if language is EN
+    if (scrapedData) {
+       if (targetLanguage === 'EN') {
+         scrapedData.affiliateLink = await generateAffiliateLink(productName, 'EN');
+       }
+       return { ...scrapedData, category };
+    }
   } catch (e) {
     console.warn("Python worker failed, falling back to Gemini...");
   }
@@ -120,7 +133,9 @@ export const enrichProductSpecs = async (productName: string, category: string, 
     const text = result.text;
     if (!text) throw new Error("No enrichment data found");
     const json = JSON.parse(text);
-    const affLink = await generateAffiliateLink(productName);
+    
+    // ✨ Dynamic Link Generation based on Language
+    const affLink = await generateAffiliateLink(productName, targetLanguage);
 
     return {
       name: productName,

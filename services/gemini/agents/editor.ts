@@ -7,7 +7,8 @@ export const generateComparisonContent = async (
   p1: Product, 
   p2: Product,
   focusFields: string[],
-  tone: string = "Professional"
+  tone: string = "Professional",
+  language: 'TH' | 'EN' = 'TH' // 👈 NEW Parameter
 ): Promise<ComparisonResult> => {
 
   const responseSchema = {
@@ -48,11 +49,15 @@ export const generateComparisonContent = async (
     ? `Compare specifically on these features: ${focusFields.join(', ')}.`
     : `Compare specs line-by-line.`;
 
-  // 📝 UPDATED PROMPT: "Balanced Premium" Tone
-  // Reduced "Hard Sell", Increased "Advisory/Curator" vibe.
+  // 📝 UPDATED PROMPT: Multi-Language Logic
+  const languageInstruction = language === 'TH'
+    ? `Language: THAI (ภาษาไทย). Use modern, natural Thai. Use "Baht" or "฿" for currency context.`
+    : `Language: ENGLISH. Use Global/US Standard English. Use "USD" or "$" for currency context.`;
+
   const prompt = `
     Role: You are a Trusted Tech Curator (Sophisticated, Insightful, Grounded).
     Task: Compare ${p1.name} vs ${p2.name}.
+    ${languageInstruction}
 
     Input Data:
     [Product A] ${p1.name}: ${JSON.stringify(p1.specs)} (Price: ${p1.price} ${p1.currency})
@@ -70,16 +75,12 @@ export const generateComparisonContent = async (
        - **THE HOOK (Intro)**: 
          - Write a short, elegant opening.
          - Focus on the *User Experience* and *Lifestyle*.
-         - Example: "The iPhone 16 Pro isn't just faster; it smooths out the friction in your daily workflow. But does the S24 offer a smarter alternative for less?"
+         - Example: "The iPhone 16 Pro isn't just faster; it smooths out the friction in your daily workflow."
        
        - **VERDICT**:
          - Act as a consultant, not a salesperson.
          - Guide the user: "If you prioritize X, choose A. But for pure value, B is the smart choice."
          - Make it feel like a wise recommendation from a friend who knows tech.
-
-       - **TRANSLATE SPECS**: 
-         - Instead of "48MP Camera", say "Capture details that make your memories look professional."
-         - Instead of "A18 Chip", say "Handles heavy tasks without breaking a sweat."
 
     Constraint: Return STRICT JSON.
   `;
@@ -105,6 +106,7 @@ export const generateComparisonContent = async (
       productAId: p1.id,
       productBId: p2.id,
       generatedAt: new Date().toISOString(),
+      language: language,
       ...json
     };
 
@@ -115,6 +117,7 @@ export const generateComparisonContent = async (
       productAId: p1.id,
       productBId: p2.id,
       generatedAt: new Date().toISOString(),
+      language: language,
       title: `[Error] ${p1.name} vs ${p2.name}`,
       intro: `Generation failed.`,
       winnerId: p1.id,
