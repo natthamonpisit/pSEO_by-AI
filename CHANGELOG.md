@@ -3,7 +3,36 @@
 All notable changes to the **CompareX** project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased] - Phase 3: Dashboard & Admin UI
+
+## [Unreleased] - Phase 4 & 5: Production, Public Frontend & Automation
+
+### 🚀 Features (New)
+*   **Production Deployment:**
+    *   **Backend:** Deployed to Railway with `apscheduler` running 24/7 background tasks.
+    *   **Frontend:** Deployed to Vercel with SPA routing support (`vercel.json`).
+    *   **Environment Variables:** Implemented `config.ts` to switch between `localhost` and `API_URL` dynamically.
+*   **Public Comparison Page:**
+    *   Implemented `/compare/:id` route for customer-facing content.
+    *   Added beautiful UI for "Verdict", "Specs Table", and "Pros/Cons".
+    *   Linked "Details" button in Admin Dashboard to the public page.
+*   **Full Loop Automation:**
+    *   Scripts: `trigger_xiaomi_test.py` to manually fire signals.
+    *   Scheduler: Runs trend discovery loop every 6 hours and processing loop every 1 minute.
+
+### ⚙️ Technical Changes & Refactoring
+*   **React Router:** Migrated `App.tsx` from manual state tabs to `react-router-dom` for deep linking.
+*   **Refactor:** Centralized `API_URL` logic in `config.ts`.
+*   **Build Fixes:** Added `vercel.json` rewrite rules to solve 404 on refresh in SPA.
+
+### 🐛 Bug Fixes
+*   Fixed `VITE_API_URL` not being read correclty in production.
+*   Fixed Vercel "Root Directory" configuration issues.
+*   Fixed `default export` error in `ProductManager.tsx` caused by file corruption.
+
+---
+
+## [0.2.0] - Phase 3: Dashboard & Admin UI
+
 
 ### 🚀 Features (New)
 *   **Modern Dashboard (React + Tailwind v4):**
