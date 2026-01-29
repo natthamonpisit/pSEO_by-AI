@@ -98,6 +98,29 @@ async def get_comparison(product_id: str):
         if not response.data:
             raise HTTPException(status_code=404, detail="Comparison not found")
             
-        return response.data[0]
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- SYSTEM / DEBUG ---
+from .logger import sys_logger
+from .scheduler import run_hunter_job, run_processing_loop
+
+@app.get("/api/system/logs")
+def get_logs():
+    return sys_logger.get_logs()
+
+@app.post("/api/system/trigger/{job_name}")
+async def trigger_job(job_name: str):
+    sys_logger.log("INFO", f"👆 Manual Trigger: {job_name}")
+    try:
+        if job_name == "hunter":
+            await run_hunter_job()
+        elif job_name == "loop":
+            await run_processing_loop()
+        else:
+            raise HTTPException(status_code=400, detail="Unknown job")
+        
+        return {"status": "triggered", "job": job_name}
+    except Exception as e:
+        sys_logger.log("ERROR", f"Manual Trigger Failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react
 import TrendMonitor from './components/TrendMonitor';
 import ProductManager from './components/ProductManager';
 import ComparisonPage from './pages/ComparisonPage';
+import SystemStatus from './components/SystemStatus';
 
 function AdminLayout() {
     const location = useLocation();
@@ -71,11 +72,7 @@ function AdminLayout() {
 
                     {activeTab === 'trends' && <TrendMonitor />}
 
-                    {activeTab === 'settings' && (
-                        <div className="text-center text-slate-400 mt-20">
-                            Settings coming soon...
-                        </div>
-                    )}
+                    {activeTab === 'settings' && <SystemStatus />}
                 </div>
             </main>
         </div>
@@ -87,8 +84,8 @@ function NavItem({ icon, label, active, onClick }: { icon: any, label: string, a
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
         >
             {icon}
