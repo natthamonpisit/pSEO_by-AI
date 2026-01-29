@@ -116,6 +116,19 @@ def find_product_url(product_name: str, category: str) -> str:
         print(f"⚠️ URL Search Error: {e}")
     return ""
 
+def find_product_image(product_name: str) -> str:
+    """Finds a relevant product image using DuckDuckGo Images."""
+    query = f"{product_name} official product photo white background"
+    try:
+        # max_results=1 to get the top hit
+        results = DDGS().images(keywords=query, max_results=1)
+        if results:
+            return results[0]['image']
+    except Exception as e:
+        print(f"⚠️ Image Search Error: {e}")
+    # Fallback placeholder
+    return "https://placehold.co/600x400?text=No+Image"
+
 def scrape_page_content(url: str) -> str:
     """Scrapes text content from a URL."""
     try:
@@ -198,6 +211,10 @@ async def enrich_product_specs(product_name: str, category: str, required_fields
         else:
              aff_link = f"https://www.google.com/search?q={product_name}"
 
+        # IMAGE SEARCH
+        real_image_url = find_product_image(product_name)
+        print(f"📸 Found Image for {product_name}: {real_image_url}")
+
         return Product(
             name=product_name,
             price=data.get("price", 0),
@@ -206,7 +223,7 @@ async def enrich_product_specs(product_name: str, category: str, required_fields
             category=category,
             specs=data.get("specs", data), # Some AI models return flat JSON, some nested. Handle both.
             tags=data.get("tags", []),
-            imageUrl=f"https://source.unsplash.com/random/300x300/?{product_name}",
+            imageUrl=real_image_url,
             affiliateLink=aff_link
         )
         
