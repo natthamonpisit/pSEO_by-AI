@@ -1,0 +1,26 @@
+import os
+from app.database import get_db
+
+db = get_db()
+
+# Raw SQL to add column
+sql = "ALTER TABLE products ADD COLUMN IF NOT EXISTS has_content BOOLEAN DEFAULT FALSE;"
+
+try:
+    # Supabase-py doesn't support raw SQL easily on client unless RPC.
+    # But we can try to use the 'rpc' interface if we have a function, or just assume user will run schema.
+    # Actually, we can use the python client to just execute if possible? No.
+    # We will log instructions for the user, but we can try to workaround.
+    # Alternatively, we can just use the 'comparisons' existence check which is safer.
+    
+    # Wait, the user said "Make a flag".
+    # I will provide the SQL file and ask user to run it, OR I can try to be smart.
+    # Since I cannot execute DDL via the standard client without `rpc` setup, 
+    # I'll rely on the logic check (count > 0) effectively ACTING as a flag for now,
+    # AND I will update the Schema definition for future compliance.
+    
+    # BUT, if I want to visualize it in ProductManager, a column is nice.
+    # I'll try to just update schema.sql and ask user to run it in Supabase Dashboard SQL Editor.
+    pass
+except Exception as e:
+    print(e)
