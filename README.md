@@ -2,7 +2,7 @@
 
 **Project Owner:** P'Ook  
 **Lead Developer:** Jay (Full-stack AI Engineer)  
-**Version:** 1.3 (Database Schema Added)
+**Version:** 1.4 (Monetization Automation)
 
 ---
 
@@ -45,14 +45,15 @@
     *   **Output:** List of Strings (Product Names).
 
 **2. Agent 2: The Clerk (เสมียนข้อมูล)**
-*   **Role:** Data Entry & Enrichment
-*   **Task:** วิ่งไปหน้าเว็บ Official หรือ GSMArena เพื่อดึง Spec มาลง Database
+*   **Role:** Data Entry & Enrichment (Plus Monetization)
+*   **Task:** วิ่งไปหน้าเว็บ Official หรือ GSMArena เพื่อดึง Spec มาลง Database + **สร้างลิงค์ทำเงิน**
 *   **🧰 Toolbelt & APIs:**
     *   **Primary Tool (Python Scraper):**
         *   `duckduckgo_search`: เพื่อหา URL ของหน้า Spec Sheet (เช่น gsmarena.com/iphone16...)
         *   `requests` + `BeautifulSoup4`: เพื่อเจาะ HTML Table และดูดข้อมูล `<tr><td>`
-    *   **Secondary Tool (AI Fallback):**
-        *   Gemini `googleSearch`: ใช้เมื่อ Python Scraper โดนบล็อก หรือหาตารางไม่เจอ
+    *   **💰 Monetization Module (New):**
+        *   **Strategy 1 (Search Link):** สร้าง URL Pattern `shopee.co.th/search?keyword={Product_Name}&utm_source={POOK_ID}`
+        *   **Strategy 2 (Deep Link API):** (Future) ยิง API ไปที่ Involve Asia/Ecomobi เพื่อแปลง URL ร้านค้าให้เป็น Affiliate Link
     *   **Cost Management:** ใช้ Python ฟรีเป็นหลัก ถ้าพลาดค่อยจ่ายเงินใช้ AI
 
 ### ⚙️ Phase 2: Production (สายพานการผลิต)
@@ -194,5 +195,21 @@ if __name__ == '__main__':
 | `updated_at` | `timestamptz` | เพื่อให้ Google รู้ว่าเนื้อหา Fresh |
 
 ---
+
+## 6. Monetization Automation
+
+วิธีทำให้ Affiliate Link เป็นอัตโนมัติ โดยไม่ต้องมานั่ง Copy-Paste เอง:
+
+1.  **Search Link Pattern (The Reliable Method):**
+    *   Agent 2 จะสร้าง Link อัตโนมัติไปที่หน้า Search Result ของ Shopee
+    *   **Format:** `https://shopee.co.th/search?keyword={Product_Name}&utm_source={POOK_AFF_ID}`
+    *   **ข้อดี:** ง่าย, ไม่ต้องใช้ API, ลิงค์ไม่มีวันเสีย (เพราะเป็นหน้า Search)
+    *   **ข้อเสีย:** User ต้องกดเลือกสินค้าอีกที
+
+2.  **API Deep Link (The Advanced Method):**
+    *   *Step 1:* ใช้ Agent 2 หา URL ร้าน Official (เช่น `shopee.co.th/apple_flagship_store/iphone16`)
+    *   *Step 2:* ส่ง URL นั้นไปที่ API ของ **Involve Asia** หรือ **Ecomobi**
+    *   *Step 3:* API จะคืนค่ากลับมาเป็น `https://invol.co/cl12345...` (ลิงค์ที่ติด Tracking แล้ว)
+    *   *Step 4:* บันทึกลง Supabase field `affiliate_link`
 
 *Note: เอกสารนี้เขียนโดย Jay เพื่อส่งต่อให้ทีม Dev รุ่นถัดไปรักษามาตรฐาน Codebase นี้ไว้*
