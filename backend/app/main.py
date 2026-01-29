@@ -20,8 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from .logger import sys_logger
+
 @app.on_event("startup")
 def startup_event():
+    sys_logger.log("INFO", "🚀 System Started")
     start_scheduler()
 
 @app.get("/")

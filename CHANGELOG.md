@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 *   Fixed Vercel "Root Directory" configuration issues.
 *   Fixed `default export` error in `ProductManager.tsx` caused by file corruption.
 *   Fixed dependency conflict by downgrading React to v18 (required by `react-helmet-async`).
+*   Fixed "Logs not showing" issue in Admin Dashboard by implementing cache-busting for log fetching default.
 
 ---
 

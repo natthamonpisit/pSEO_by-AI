@@ -15,14 +15,18 @@ export default function SystemStatus() {
 
     const fetchLogs = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/system/logs`);
+            // Add cache-busting timestamp
+            const res = await fetch(`${API_URL}/api/system/logs?t=${Date.now()}`);
             if (!res.ok) throw new Error(`Backend Error: ${res.status}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setLogs(data);
+                // If logs are empty but fetch worked, we could show "No logs yet" instead of "Waiting..." 
+                // but let's stick to the current UI logic for now.
             }
         } catch (err) {
             console.error("Fetch Logs Failed:", err);
+            // Optionally: set a UI error state here if you want to show it to the user
         }
     };
 
