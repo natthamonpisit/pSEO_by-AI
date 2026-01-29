@@ -158,9 +158,33 @@ export default function ComparisonPage() {
                         </div>
                     </div>
 
-                    <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mb-12">
                         {data.intro}
                     </p>
+
+                    {/* Meet the Contenders (Summaries) */}
+                    {(data.summary_a || data.summaryA) && (
+                        <div className="grid md:grid-cols-2 gap-8 text-left mb-16 px-4">
+                            <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                                <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
+                                    {data.product_a_data?.name || "Product A"}
+                                </h3>
+                                <p className="text-slate-600 text-sm leading-relaxed">
+                                    {data.summary_a || data.summaryA}
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                                <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <span className="w-2 h-8 bg-rose-500 rounded-full"></span>
+                                    {data.product_b_data?.name || "Product B"}
+                                </h3>
+                                <p className="text-slate-600 text-sm leading-relaxed">
+                                    {data.summary_b || data.summaryB}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Winner Card */}
