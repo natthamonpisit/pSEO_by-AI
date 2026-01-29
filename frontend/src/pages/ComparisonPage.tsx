@@ -1,22 +1,33 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Check, Award, BarChart3, Star, Clock } from 'lucide-react';
+import { ChevronLeft, Check, Award, BarChart3, Star, Clock, AlertCircle } from 'lucide-react';
 import { API_URL } from '../config';
 import SEO from '../components/SEO';
 
+// Flexible interface to handle both Old and New schema
 interface ComparisonData {
     title: string;
     intro: string;
     verdict: string;
-    score_a: number;
-    score_b: number;
-    winner_id: string | null;
-    pros_a: string[];
-    cons_a: string[];
-    pros_b: string[];
-    cons_b: string[];
-    spec_comparison: Array<{ field: string, valueA: string, valueB: string, winner: string }>;
-    faqs: Array<{ question: string, answer: string }>;
+
+    // New Schema
+    score_a?: number;
+    score_b?: number;
+    winner_id?: string | null;
+    pros_a?: string[];
+    cons_a?: string[];
+    pros_b?: string[];
+    cons_b?: string[];
+    spec_comparison?: any; // Can be Array or Object
+
+    // Legacy Schema
+    score_p1?: number;
+    score_p2?: number;
+    winner?: string;
+    pros_cons_p1?: { pros: string[], cons: string[] };
+    pros_cons_p2?: { pros: string[], cons: string[] };
+
+    [key: string]: any;
 }
 
 export default function ComparisonPage() {
@@ -31,6 +42,7 @@ export default function ComparisonPage() {
                 const res = await fetch(`${API_URL}/api/comparisons/${id}`);
                 if (!res.ok) throw new Error('Comparison not found');
                 const json = await res.json();
+                console.log("Fetched Data:", json); // Debugging
                 setData(json);
             } catch (err: any) {
                 setError(err.message);
@@ -45,9 +57,29 @@ export default function ComparisonPage() {
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
     if (!data) return null;
 
-    // --- SEO & Schema Generation ---
-    const winnerScore = data.score_a > data.score_b ? data.score_a : data.score_b;
-    // Basic Product Schema for the "Main Entity" (The Comparison or the Winner)
+    // --- Normalization Logic ---
+    const scoreA = data.score_a ?? data.score_p1 ?? 0;
+    const scoreB = data.score_b ?? data.score_p2 ?? 0;
+    const winnerScore = Math.max(scoreA, scoreB);
+
+    const prosA = data.pros_a ?? data.pros_cons_p1?.pros ?? [];
+    const consA = data.cons_a ?? data.pros_cons_p1?.cons ?? [];
+    const prosB = data.pros_b ?? data.pros_cons_p2?.pros ?? [];
+    const consB = data.cons_b ?? data.pros_cons_p2?.cons ?? [];
+
+    const winnerName = data.winner_id ? (data.winner_id === data.product_a_id ? "Product A" : "Product B") : (data.winner ?? "The Winner");
+
+    // Normalize Specs: Convert legacy Object to Array
+    const specs = Array.isArray(data.spec_comparison)
+        ? data.spec_comparison
+        : Object.entries(data.spec_comparison || {}).map(([key, val]: [string, any]) => ({
+            field: key,
+            valueA: val.p1 || "No data",
+            valueB: val.p2 || "No data",
+            winner: val.winner || "-"
+        }));
+
+    // SEO Data
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -63,14 +95,6 @@ export default function ComparisonPage() {
             "author": { "@type": "Organization", "name": "CompareX AI" },
             "reviewBody": data.verdict
         }
-    };
-
-    // Helper for check marks in specs
-    const isWinner = (val: string, winner: string) => {
-        if (!winner) return false;
-        // Simple logic: if winner is "A" and val is valueA (implied by column)
-        // But here we rely on the row's 'winner' field: "A", "B", or "Tie"
-        return false;
     };
 
     return (
@@ -114,11 +138,7 @@ export default function ComparisonPage() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 uppercase tracking-wider backdrop-blur-sm">
                             <Award size={14} /> The Verdict
                         </div>
-                        {/* Note: We don't have explicit winner NAME in top-level data, only winner_id. 
-                            Ideally we'd fetch product names or store them. For now, infer from context or leave generic?
-                            Actually, title usually says "A vs B", so we can guess. 
-                            Let's just show the verdict text which usually names the winner. */}
-                        <h2 className="text-3xl font-bold mb-4">Winner Revealed</h2>
+                        <h2 className="text-3xl font-bold mb-4">Winner: {winnerName}</h2>
                         <p className="text-indigo-100 leading-relaxed max-w-2xl mx-auto">
                             {data.verdict}
                         </p>
@@ -142,19 +162,15 @@ export default function ComparisonPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {data.spec_comparison && data.spec_comparison.map((item, i) => (
+                                {specs.map((item: any, i: number) => (
                                     <tr key={i} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-700">{item.field}</td>
                                         <td className="px-6 py-4 text-slate-600">{item.valueA}</td>
                                         <td className="px-6 py-4 text-slate-600">{item.valueB}</td>
                                         <td className="px-6 py-4 text-right">
-                                            {/* Show check if winner matches. 
-                                                The backend prompt now asks for "A" or "B" or "Tie". 
-                                                We display the text, and maybe an icon if it's clear. 
-                                            */}
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700">
-                                                {item.winner === 'A' && <Check size={12} />}
-                                                {item.winner === 'B' && <Check size={12} />}
+                                                {(item.winner === 'A' || item.winner === 'Product A') && <Check size={12} />}
+                                                {(item.winner === 'B' || item.winner === 'Product B') && <Check size={12} />}
                                                 {item.winner}
                                             </span>
                                         </td>
@@ -176,23 +192,31 @@ export default function ComparisonPage() {
                         <div className="space-y-4">
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
-                                <ul className="space-y-2">
-                                    {data.pros_a?.map((item, i) => (
-                                        <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                                            <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
-                                        </li>
-                                    ))}
-                                </ul>
+                                {prosA.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {prosA.map((item: string, i: number) => (
+                                            <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                                                <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-slate-400 italic">No data available</p>
+                                )}
                             </div>
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
-                                <ul className="space-y-2">
-                                    {data.cons_a?.map((item, i) => (
-                                        <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                                            <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
-                                        </li>
-                                    ))}
-                                </ul>
+                                {consA.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {consA.map((item: string, i: number) => (
+                                            <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                                                <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-slate-400 italic">No data available</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -206,23 +230,31 @@ export default function ComparisonPage() {
                         <div className="space-y-4">
                             <div>
                                 <h4 className="text-xs font-bold text-emerald-600 uppercase mb-2">Pros</h4>
-                                <ul className="space-y-2">
-                                    {data.pros_b?.map((item, i) => (
-                                        <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                                            <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
-                                        </li>
-                                    ))}
-                                </ul>
+                                {prosB.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {prosB.map((item: string, i: number) => (
+                                            <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                                                <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" /> {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-slate-400 italic">No data available</p>
+                                )}
                             </div>
                             <div>
                                 <h4 className="text-xs font-bold text-rose-500 uppercase mb-2 mt-4">Cons</h4>
-                                <ul className="space-y-2">
-                                    {data.cons_b?.map((item, i) => (
-                                        <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                                            <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
-                                        </li>
-                                    ))}
-                                </ul>
+                                {consB.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {consB.map((item: string, i: number) => (
+                                            <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                                                <span className="text-rose-500 shrink-0 font-bold text-xs mt-0.5">✕</span> {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-slate-400 italic">No data available</p>
+                                )}
                             </div>
                         </div>
                     </div>
