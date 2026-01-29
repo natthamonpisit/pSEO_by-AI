@@ -40,6 +40,9 @@ async def generate_comparison(p1: Dict[str, Any], p2: Dict[str, Any], focus_fiel
     - Prioritize PRICE-TO-PERFORMANCE.
     - Output STRICT JSON with these keys: title, intro, winnerId, verdict, scoreA, scoreB, prosA, consA, prosB, consB, specComparison (list of dicts with keys: field, valueA, valueB, winner (A or B or Tie)), faqs.
     - KEEP KEYS IN ENGLISH. VALUES IN {language}.
+
+    Specific Content Guidance:
+    - [Intro]: Generate a 2-3 sentence "Hook" that explains why people compare these two products. Mention their key target audience or main difference immediately to grab attention. Make it feel like a human expert starting a conversation. Do not just list specs here.
     """
     
     try:
