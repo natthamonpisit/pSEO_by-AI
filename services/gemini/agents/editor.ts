@@ -2,7 +2,24 @@ import { Type } from "@google/genai";
 import { ai, MODEL_NAME } from "../core";
 import { Product, ComparisonResult } from '../../types';
 
-// 🧠 AGENT 3 & 4: The Analyst & The Editor
+/**
+ * 🧠 AGENT 3 & 4: The Analyst & The Editor
+ * 
+ * This is the CORE of the pSEO engine. It performs two roles:
+ * 1. The Analyst: Compares Product A vs B line-by-line (Price vs Performance).
+ * 2. The Editor: Writes the final article, title, intro, and SEO elements.
+ * 
+ * Features:
+ * - Support Multi-language (TH/EN) based on input.
+ * - Generates JSON-LD schema friendly data.
+ * - Generates FAQs for Voice Search optimization.
+ * 
+ * @param p1 - Product A
+ * @param p2 - Product B
+ * @param focusFields - List of specs to prioritize in comparison
+ * @param tone - Writing style (e.g. Professional)
+ * @param language - Target output language
+ */
 export const generateComparisonContent = async (
   p1: Product, 
   p2: Product,

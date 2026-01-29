@@ -12,6 +12,9 @@ const PublicView: React.FC = () => {
   const [productB, setProductB] = useState<Product | null>(null);
   const [showSourceCode, setShowSourceCode] = useState(false); // For learning purpose
 
+  /**
+   * 🔄 Init: Load all available comparisons to simulate a site map navigation.
+   */
   useEffect(() => {
     const all = dataService.getComparisons();
     setComparisons(all);
@@ -20,6 +23,10 @@ const PublicView: React.FC = () => {
     }
   }, []);
 
+  /**
+   * 👆 Action: Load a specific comparison page.
+   * Fetches the full product details (Price, Image) based on ID stored in the comparison result.
+   */
   const loadComparison = (comp: ComparisonResult) => {
     setSelectedComparison(comp);
     setProductA(dataService.getProductById(comp.productAId) || null);
@@ -32,8 +39,14 @@ const PublicView: React.FC = () => {
     return `$${amount.toLocaleString()}`;
   };
 
-  // 🤖 GEO SECRET: JSON-LD Generator
-  // This function creates the "Machine Language" for Google/AI to read.
+  /**
+   * 🤖 GEO SECRET: JSON-LD Generator
+   * 
+   * This function creates the "Machine Language" (Structured Data) for Google/AI to read.
+   * It tells Google: "This is a Product Comparison page", "Here are the FAQs".
+   * 
+   * @returns JSON string of Schema.org data
+   */
   const generateStructuredData = () => {
     if (!selectedComparison || !productA || !productB) return '';
 

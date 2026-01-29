@@ -10,9 +10,23 @@ export const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const MODEL_NAME = 'gemini-3-flash-preview'; 
 
-// Helper สำหรับ Monetization (Hybrid Strategy)
-// THAI -> Shopee Search (ชัวร์สุดสำหรับคนไทย)
-// GLOBAL -> Official Site (เพื่อให้ Skimlinks ทำงานเปลี่ยนเป็น Affiliate อัตโนมัติ)
+/**
+ * 💰 Hybrid Monetization Strategy Engine
+ * 
+ * Logic:
+ * 1. THAI Market (🇹🇭):
+ *    - Uses "Shopee Search Link" logic.
+ *    - Why: High conversion rate, user finds stock easily even if one shop is OOS.
+ * 
+ * 2. GLOBAL Market (🌍):
+ *    - Uses "Official Site Search" via Gemini Grounding.
+ *    - Why: Skimlinks/VigLink Javascript on the frontend will auto-convert 
+ *      these official domains (e.g., samsung.com) into affiliate links.
+ * 
+ * @param productName - Name of the product
+ * @param targetLanguage - 'TH' or 'EN'
+ * @returns An optimized URL string
+ */
 export const generateAffiliateLink = async (productName: string, targetLanguage: 'TH' | 'EN' = 'TH'): Promise<string> => {
   
   if (targetLanguage === 'TH') {

@@ -4,6 +4,15 @@ import { Product } from '../../types';
 
 // 🤖 AGENT 2: The Clerk (Spec Management)
 
+/**
+ * 🧠 AI Architect: Generate Category Template
+ * 
+ * Analyzes a category name (e.g., "Drone") and decides:
+ * 1. What specs matter most? (Flight time, Range, Camera)
+ * 2. What tone should be used? (Adventurous, Technical)
+ * 
+ * @param categoryName - The user-input category
+ */
 export const generateSpecTemplate = async (categoryName: string): Promise<{fields: string[], tone: string}> => {
   const responseSchema = {
     type: Type.OBJECT,
@@ -46,7 +55,12 @@ export const generateSpecTemplate = async (categoryName: string): Promise<{field
   }
 };
 
-// 🐍 [TIER B] Python Scraper Simulation
+/**
+ * 🐍 [TIER B] Python Scraper Simulation
+ * 
+ * Mock function to simulate a backend worker (e.g., Beautiful Soup / Selenium).
+ * In a real app, this would be an API call to a Python service on Railway.app.
+ */
 const callPythonScraperWorker = async (productName: string): Promise<Partial<Product> | null> => {
   console.log(`🐍 calling Python Worker for: ${productName}...`);
   await new Promise(r => setTimeout(r, 2000)); // Simulate Latency
@@ -77,7 +91,19 @@ const callPythonScraperWorker = async (productName: string): Promise<Partial<Pro
   return null;
 };
 
-// Main Enrichment Logic
+/**
+ * 🔍 Main Enrichment Logic (The Clerk)
+ * 
+ * Strategy:
+ * 1. Try to fetch data via Python Scraper (Cheap/Free).
+ * 2. If Python fails, fallback to Gemini AI with Google Search (Cost money but accurate).
+ * 3. Also generates the correct Affiliate Link based on Language.
+ * 
+ * @param productName - Product to search for
+ * @param category - Product category
+ * @param requiredFields - Specs to find
+ * @param targetLanguage - 'TH' or 'EN'
+ */
 export const enrichProductSpecs = async (
   productName: string, 
   category: string, 

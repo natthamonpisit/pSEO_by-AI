@@ -14,7 +14,13 @@ const STORAGE_KEY_PRODUCTS = 'pseo_products';
 const STORAGE_KEY_COMPARISONS = 'pseo_comparisons';
 const STORAGE_KEY_CATEGORIES = 'pseo_categories';
 
-// Helper: Define default specs for initial categories
+/**
+ * 🛠️ Helper: Get default comparison fields based on category name.
+ * Used when the AI hasn't generated a template yet or as a fallback.
+ * 
+ * @param category - The name of the category (e.g., "Smartphone")
+ * @returns Array of spec keys (e.g., ["Camera", "Battery"])
+ */
 const GET_DEFAULT_SPECS = (category: string): string[] => {
   const map: Record<string, string[]> = {
     'Smartphone': ['Display', 'Processor', 'Camera', 'Battery', 'Charging'],
@@ -26,7 +32,10 @@ const GET_DEFAULT_SPECS = (category: string): string[] => {
   return map[category] || ['Price', 'Features', 'Build Quality', 'Performance']; // Fallback
 };
 
-// Helper to initialize data
+/**
+ * 🛠️ Helper: Initialize local storage with Seed Data.
+ * Ensures the app has dummy data to show on the first load.
+ */
 const initData = () => {
   if (!localStorage.getItem(STORAGE_KEY_PRODUCTS)) {
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(MOCK_PRODUCTS));
@@ -52,17 +61,31 @@ initData();
 
 export const dataService = {
   // --- CATEGORIES (Dynamic Architecture) ---
+  
+  /**
+   * 📖 Read: Get all active categories.
+   */
   getCategories: (): CategoryDefinition[] => {
     const data = localStorage.getItem(STORAGE_KEY_CATEGORIES);
     return data ? JSON.parse(data) : [];
   },
 
+  /**
+   * 🔍 Search: Find a category definition by its name.
+   */
   getCategoryByName: (name: string): CategoryDefinition | undefined => {
     const categories = dataService.getCategories();
     return categories.find(c => c.name === name);
   },
 
-  // ✨ UPDATED: Full Schema Support
+  /**
+   * ✍️ Write: Create a new category with specific AI rules (fields & tone).
+   * Prevents duplicates based on slug.
+   * 
+   * @param name - Category Name
+   * @param customFields - (Optional) List of specs AI should focus on
+   * @param tone - (Optional) The writing style for this category
+   */
   addCategory: (name: string, customFields?: string[], tone?: string) => {
     const categories = dataService.getCategories();
     const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
@@ -82,6 +105,9 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
   },
 
+  /**
+   * 🗑️ Delete: Remove a category by ID.
+   */
   deleteCategory: (id: string) => {
     const categories = dataService.getCategories();
     const filtered = categories.filter(c => c.id !== id);
@@ -89,16 +115,27 @@ export const dataService = {
   },
 
   // --- PRODUCTS ---
+
+  /**
+   * 📖 Read: Get all products.
+   */
   getProducts: (): Product[] => {
     const data = localStorage.getItem(STORAGE_KEY_PRODUCTS);
     return data ? JSON.parse(data) : [];
   },
 
+  /**
+   * 🔍 Search: Find a product by ID.
+   */
   getProductById: (id: string): Product | undefined => {
     const products = dataService.getProducts();
     return products.find(p => p.id === id);
   },
 
+  /**
+   * ✍️ Write: Save or Update a product.
+   * If ID exists, update; otherwise, insert new.
+   */
   saveProduct: (product: Product) => {
     const products = dataService.getProducts();
     const index = products.findIndex(p => p.id === product.id);
@@ -111,11 +148,19 @@ export const dataService = {
   },
 
   // --- COMPARISONS ---
+
+  /**
+   * 📖 Read: Get all generated comparison pages.
+   */
   getComparisons: (): ComparisonResult[] => {
     const data = localStorage.getItem(STORAGE_KEY_COMPARISONS);
     return data ? JSON.parse(data) : [];
   },
 
+  /**
+   * 🔍 Search: Find an existing comparison between two products.
+   * Checks both directions (A vs B and B vs A).
+   */
   getComparisonBySlug: (idA: string, idB: string): ComparisonResult | undefined => {
     const comparisons = dataService.getComparisons();
     return comparisons.find(c => 
@@ -124,6 +169,10 @@ export const dataService = {
     );
   },
 
+  /**
+   * ✍️ Write: Save a generated comparison to the database.
+   * Overwrites if a comparison between these two IDs already exists.
+   */
   saveComparison: (comparison: ComparisonResult) => {
     const comparisons = dataService.getComparisons();
     const filtered = comparisons.filter(c => 
@@ -134,6 +183,10 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEY_COMPARISONS, JSON.stringify(filtered));
   },
 
+  /**
+   * 📊 Analytics: Calculate total possible pages (N * (N-1) / 2)
+   * Groups calculation by Category to be accurate.
+   */
   getPotentialCombinationsCount: (): number => {
     // Logic: Calculate pairings PER category to be more accurate
     const products = dataService.getProducts();

@@ -2,7 +2,15 @@ import { Type } from "@google/genai";
 import { ai, MODEL_NAME } from "../core";
 import { TrendItem } from '../../types';
 
-// 🦅 AGENT 1: The Hunter (Daily Trends)
+/**
+ * 🦅 AGENT 1: The Hunter (Trend Spotter)
+ * 
+ * Scans Google Search for "Today's Hottest Products" in a specific category.
+ * Used in the "Auto-Pilot" mode to populate the database automatically.
+ * 
+ * @param category - The market sector to scan (e.g., "Smartwatch")
+ * @returns Array of trending items found
+ */
 export const getDailyTrends = async (category: string): Promise<TrendItem[]> => {
   const prompt = `
     Role: You are a Tech Trend Hunter.
@@ -39,7 +47,15 @@ export const getDailyTrends = async (category: string): Promise<TrendItem[]> => 
   }
 };
 
-// 🦅 AGENT 1: The Hunter (Competitor Spotter Variant)
+/**
+ * 🦅 AGENT 1 (Variant): Competitor Spotter
+ * 
+ * Used when a user enters ONE product name manually.
+ * This agent finds the best "Rivals" to compare against.
+ * 
+ * @param productName - The source product
+ * @returns Array of competitor names and reasons
+ */
 export const discoverCompetitors = async (productName: string): Promise<{name: string, reason: string}[]> => {
   const responseSchema = {
     type: Type.OBJECT,

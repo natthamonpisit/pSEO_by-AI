@@ -2,7 +2,7 @@
 
 **Project Owner:** P'Ook  
 **Lead Developer:** Jay (Full-stack AI Engineer)  
-**Version:** 1.5 (Refactored & Curator Mode)
+**Version:** 2.0 (GEO Ready & Hybrid Monetization)
 
 ---
 
@@ -15,7 +15,7 @@
 
 ---
 
-## 2. Code Architecture (Refactored)
+## 2. Code Architecture (Micro-Agent Services)
 
 เพื่อรองรับการขยายตัวในอนาคต เจได้ระเบิดไฟล์ `geminiService.ts` เดิม ออกเป็น Module ย่อยตามหน้าที่ (Separation of Concerns):
 
@@ -23,30 +23,56 @@
 services/gemini/
 ├── core.ts              # Config กลาง (API Key, Model Name)
 ├── agents/
-│   ├── hunter.ts        # Agent 1: ค้นหาเทรนด์และคู่แข่ง
-│   ├── clerk.ts         # Agent 2: หา Spec และทำ Affiliate Link
-│   └── editor.ts        # Agent 3 & 4: วิเคราะห์และเขียนบทความ
+│   ├── hunter.ts        # Agent 1: ค้นหาเทรนด์และคู่แข่ง (Trend Spotter)
+│   ├── clerk.ts         # Agent 2: หา Spec และจัดการข้อมูล (Data Entry)
+│   └── editor.ts        # Agent 3 & 4: วิเคราะห์และเขียนบทความ (Content Creator)
 └── index.ts             # Facade (ทางเข้าหลัก) ให้ Frontend เรียกใช้ง่ายๆ
 ```
 
 ---
 
-## 3. The New AI Workflow & Toolbelts
+## 3. The Monetization Strategy (Hybrid Model) 💰
 
-ทีมงาน AI 4 ตัว จะแบ่งหน้าที่และเครื่องมือดังนี้:
+เราใช้กลยุทธ์การทำเงินแบบผสมผสาน เพื่อให้ได้ Conversion สูงสุดในแต่ละตลาด:
+
+| Market | Strategy | Why? |
+| :--- | :--- | :--- |
+| **🇹🇭 Thailand** | **Shopee Search Link** | คนไทยชอบซื้อของใน Shopee/Lazada การส่งไปหน้า Search (`shopee.co.th/search?keyword=...`) conversion ดีกว่าส่งไปร้านเดียว (เพราะร้านนั้นของอาจหมด) |
+| **🌍 Global** | **Skimlinks (Auto)** | ฝรั่งชอบกดเว็บ Official Brand (เช่น Samsung.com) เราจึงให้ AI หาลิงก์ Official แล้วใช้ Skimlinks JS เปลี่ยนเป็น Affiliate Link อัตโนมัติ (ไม่ต้องไล่สมัครเอง) |
+
+**Code Location:** `services/gemini/core.ts` -> `generateAffiliateLink()`
+
+---
+
+## 4. GEO Strategy (Generative Engine Optimization) 🤖
+
+เพื่อให้เว็บเราติดหน้าแรก Google และถูก AI (Gemini/ChatGPT) นำข้อมูลไปตอบคำถาม เราใช้เทคนิคดังนี้:
+
+### 4.1. JSON-LD Schema (Talking to Robots)
+เราฝัง Code ลับที่คนมองไม่เห็น แต่ Robot ชอบอ่าน ไว้ในทุกหน้า:
+*   **Type:** `Product` & `FAQPage`
+*   **Effect:** ทำให้ Google รู้จักชื่อสินค้า ราคา และ Rating ทันที (มีโอกาสได้ Rich Snippet รูปดาวบนหน้าค้นหา)
+
+### 4.2. FAQ Trap (Voice Search Optimization)
+*   **Concept:** คนสมัยนี้ชอบถาม Google ด้วยเสียง (Voice Search) เป็นประโยคยาวๆ
+*   **Execution:** เราให้ AI Agent สร้างหัวข้อ Q&A ท้ายบทความเสมอ เช่น *"iPhone 16 แบตอึดกว่า S24 ไหม?"*
+*   **Goal:** เพื่อชิงตำแหน่ง **Featured Snippet** (กล่องคำตอบอันดับ 0)
+
+---
+
+## 5. The AI Workflow (4-Agent System)
 
 ### 🔭 Phase 1: Ingestion (หาของเข้าโกดัง)
 
 **1. Agent 1: The Hunter (นักล่า)**
-*   **Role:** Trend Spotter & Competitor Discovery
+*   **Role:** Trend Spotter
 *   **Task:** ตื่นเช้ามาหา "keyword สินค้ามาใหม่" และจับคู่ "สินค้าคู่แข่ง"
 *   **Toolbelt:** Google Search Grounding
 
 **2. Agent 2: The Clerk (เสมียนข้อมูล)**
-*   **Role:** Data Entry & Monetization
-*   **Task:** หา Spec สินค้า และ **สร้างลิงค์ทำเงิน (Affiliate Link)**
+*   **Role:** Data Entry
+*   **Task:** หา Spec สินค้า (Price, Tech Specs) จากเว็บ Official
 *   **Toolbelt:** Python Scraper (Simulation) + Google Search
-*   **Monetization Strategy:** สร้าง Search Link อัตโนมัติ (`shopee.co.th/search?keyword=...`) เพื่อความเสถียรและแม่นยำ
 
 ### ⚙️ Phase 2: Production (สายพานการผลิต)
 
@@ -57,42 +83,15 @@ services/gemini/
 **4. Agent 4: The Editor (บรรณาธิการ)**
 *   **Role:** Trusted Tech Curator (The Voice)
 *   **Tone:** "Sophisticated but Grounded" (เหมือนเพื่อนที่มีรสนิยมดี แนะนำแกมเล่าเรื่อง)
-*   **Task:** แปลงผลคะแนนเป็นบทความ SEO
-*   **Key Instruction:** 
-    *   ❌ ห้าม Hard Sell (เลิกใช้คำว่า "Buy Now", "Magic", "Unbelievable")
-    *   ✅ เน้น Experience (ใช้คำว่า "Effortless", "Refined", "Worthwhile")
-    *   ✅ เขียนสั้น กระชับ แบบ Apple แต่จริงใจแบบเพื่อน
+*   **Task:** เขียนบทสรุป, Pros/Cons และ FAQ
+*   **SEO Rule:** ห้าม Hard Sell, เน้น User Experience
 
 ---
 
-## 4. Backend Target Architecture (Python Worker)
+## 6. Compliance & Safety 🛡️
 
-ใน Production จริง เราจะย้าย Logic การหาข้อมูล (Agent 1 & 2) ไปรันบน Server แยก (เช่น Railway) เพื่อประหยัด Cost และเพิ่มความเร็ว
-
-```python
-# ตัวอย่าง Logic ของ Python Worker (Future Implementation)
-def enrich_product(name):
-    # 1. Search for Spec URL (GSMArena/Official)
-    url = search_google(f"{name} specs")
-    
-    # 2. Scrape HTML Table
-    specs = scrape_table(url)
-    
-    # 3. Generate Affiliate Link
-    aff_link = generate_shopee_link(name)
-    
-    return { "specs": specs, "affiliate_link": aff_link }
-```
-
----
-
-## 5. Database Schema (Supabase)
-
-เราใช้ Hybrid Schema (SQL + JSONB) เพื่อความยืดหยุ่น:
-
-*   **`products` Table:** เก็บ Spec และ Affiliate Link
-*   **`categories` Table:** เก็บ Config ของแต่ละหมวด (เช่น มือถือต้องเทียบกล้อง, รถ EV ต้องเทียบระยะทาง)
-*   **`comparisons` Table:** เก็บ Content ที่ AI เขียนเสร็จแล้ว พร้อมสำหรับทำ SEO
+*   **Disclaimer:** ทุกหน้าต้องมีข้อความ "Affiliate Disclaimer" เพื่อความโปร่งใสและไม่ผิดกฎ Amazon/Ad Networks
+*   **Drip Feed:** (Future Plan) ในการ Submit Sitemap ห้ามส่ง 1,000 หน้าพร้อมกัน ต้องค่อยๆ ปล่อยทีละนิดเพื่อให้ Google Bot ไม่มองว่าเป็น Spam
 
 ---
 
