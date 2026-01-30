@@ -182,7 +182,7 @@ Frontend (Vercel):
 
 ### Backend (Railway)
 ```bash
-GOOGLE_API_KEY=AIzaSyC-TXtlgrybBR6xRFpxfklqEII9lhptiEI
+GOOGLE_API_KEY=AIzaSy... (Redacted)
 SUPABASE_URL=https://hqmnmesllhdpacowfhbd.supabase.co
 SUPABASE_KEY=eyJhbGc...  # Your actual key
 FRONTEND_URL=https://p-seo-by-ai.vercel.app
