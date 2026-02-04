@@ -31,15 +31,25 @@ async def run_processing_loop():
     try:
         trends_res = db.table("trends").select("*").eq("status", "NEW").limit(1).execute()
         trends = trends_res.data
-    except Exception as e:
+    except Exception:
         # sys_logger.log("ERROR", f"Scheduler DB Error: {e}") # Too noisy if DB is temporarily down
         return
 
     if not trends:
-        # sys_logger.log("INFO", "[Scheduler] No new trends to process.")
         return
 
     for trend in trends:
+        # Atomic status transition to prevent duplicate processing
+        try:
+            locked = db.table("trends")\\
+                .update({"status": "ENRICHING"})\\
+                .eq("id", trend["id"])\\
+                .eq("status", "NEW")\\
+                .execute()
+            if not locked.data:
+                continue
+        except Exception:
+            continue
         sys_logger.log("INFO", f"[Scheduler] Processing: {trend['product_name']}")
         
         try:

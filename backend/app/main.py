@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import time
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -157,12 +157,112 @@ class CompareRequest(BaseModel):
     tone: str = "Professional"
     language: str = "TH"
 
+class ProductSourceCreate(BaseModel):
+    product_id: str
+    url: str
+    source_type: str = "OTHER"
+    confidence: float = 0.0
+    notes: Optional[str] = None
+
+class ProductReviewCreate(BaseModel):
+    product_id: str
+    source: Optional[str] = None
+    rating: Optional[float] = None
+    summary: Optional[str] = None
+    sentiment: str = "neutral"
+    url: Optional[str] = None
+
+class ArticleDraftCreate(BaseModel):
+    product_id: Optional[str] = None
+    language: str = "TH"
+    title: str
+    body: str
+    status: str = "DRAFT"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class ArticleLayoutCreate(BaseModel):
+    draft_id: str
+    layout_json: Dict[str, Any]
+    hero_image: Optional[str] = None
+    gallery: List[str] = Field(default_factory=list)
+
 @app.post("/api/editor/compare")
 async def compare_products(req: CompareRequest):
     try:
         return await editor.generate_comparison(
             req.p1, req.p2, req.focus_fields, req.tone, req.language
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/products/sources")
+async def create_product_source(req: ProductSourceCreate):
+    try:
+        payload = req.model_dump()
+        response = clerk.get_db().table("product_sources").insert(payload).execute()
+        return response.data[0] if response.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/products/reviews")
+async def create_product_review(req: ProductReviewCreate):
+    try:
+        payload = req.model_dump()
+        response = clerk.get_db().table("product_reviews").insert(payload).execute()
+        return response.data[0] if response.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/articles/drafts")
+async def create_article_draft(req: ArticleDraftCreate):
+    try:
+        payload = req.model_dump()
+        response = clerk.get_db().table("article_drafts").insert(payload).execute()
+        return response.data[0] if response.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/articles/drafts")
+async def list_article_drafts(status: Optional[str] = None):
+    try:
+        query = clerk.get_db().table("article_drafts").select("*").order("created_at", desc=True)
+        if status:
+            query = query.eq("status", status)
+        response = query.limit(20).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/articles/drafts/{draft_id}")
+async def get_article_draft(draft_id: str):
+    try:
+        response = clerk.get_db().table("article_drafts").select("*").eq("id", draft_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/articles/layouts")
+async def create_article_layout(req: ArticleLayoutCreate):
+    try:
+        payload = req.model_dump()
+        response = clerk.get_db().table("article_layouts").insert(payload).execute()
+        return response.data[0] if response.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/articles/layouts/{draft_id}")
+async def get_article_layout(draft_id: str):
+    try:
+        response = clerk.get_db().table("article_layouts").select("*").eq("draft_id", draft_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Layout not found")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
